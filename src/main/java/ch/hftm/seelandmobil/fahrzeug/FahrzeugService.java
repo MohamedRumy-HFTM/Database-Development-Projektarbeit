@@ -41,6 +41,11 @@ public class FahrzeugService {
         return FahrzeugResponse.von(laden(id));
     }
 
+    @Transactional(readOnly = true)
+    public Seite<FahrzeugResponse> alle(Long standortId, int seite, int groesse) {
+        return Seite.von(fahrzeuge.findeAlle(standortId, PageRequest.of(seite, groesse)).map(FahrzeugResponse::von));
+    }
+
     /** A6: Fahrzeuge in Betrieb ohne überschneidende, nicht stornierte Reservation im Zeitraum [von, bis). */
     @Transactional(readOnly = true)
     public Seite<VerfuegbaresFahrzeug> verfuegbareSuchen(OffsetDateTime von, OffsetDateTime bis, Long standortId,

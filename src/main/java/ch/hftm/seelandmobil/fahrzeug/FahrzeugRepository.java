@@ -43,6 +43,15 @@ public interface FahrzeugRepository extends JpaRepository<Fahrzeug, Long> {
                                                 @Param("kategorie") Kategorie kategorie,
                                                 Pageable pageable);
 
+    /** Liste für die Verwaltung (A1), mit Standort in derselben Abfrage. */
+    @Query(value = """
+            select f from Fahrzeug f join fetch f.standort s
+            where (:standortId is null or s.id = :standortId)
+            order by f.kennzeichen
+            """,
+            countQuery = "select count(f) from Fahrzeug f where (:standortId is null or f.standort.id = :standortId)")
+    Page<Fahrzeug> findeAlle(@Param("standortId") Long standortId, Pageable pageable);
+
     /**
      * Exklusive Zeilensperre (A1). Standortwechsel und Ausserbetriebnahme prüfen zuerst,
      * ob offene Reservationen existieren; bis zum Commit darf keine neue dazukommen.

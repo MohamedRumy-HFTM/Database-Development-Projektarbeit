@@ -151,6 +151,20 @@ class FahrzeugApiTest {
                 .andExpect(status().isConflict());
     }
 
+    @Test
+    void listeNachStandortSortiertNachKennzeichen() throws Exception {
+        erfassen("BE 1012", "Aarberg");
+        erfassen("BE 1011", "Aarberg");
+        erfassen("BE 1013", "Nidau");
+
+        mvc.perform(get("/api/fahrzeuge").param("standortId", String.valueOf(standortId("Aarberg"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.anzahlGesamt").value(2))
+                .andExpect(jsonPath("$.inhalt[0].kennzeichen").value("BE 1011"))
+                .andExpect(jsonPath("$.inhalt[1].kennzeichen").value("BE 1012"))
+                .andExpect(jsonPath("$.inhalt[0].standortName").value("Aarberg"));
+    }
+
     private long erfassen(String kennzeichen, String standort) throws Exception {
         String antwort = postFahrzeug(kennzeichen, standortId(standort))
                 .andExpect(status().isCreated())

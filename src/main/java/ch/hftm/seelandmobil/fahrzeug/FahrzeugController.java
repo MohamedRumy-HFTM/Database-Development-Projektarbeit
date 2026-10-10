@@ -35,6 +35,14 @@ public class FahrzeugController {
         return ResponseEntity.created(URI.create("/api/fahrzeuge/" + fahrzeug.id())).body(fahrzeug);
     }
 
+    @GetMapping
+    public Seite<FahrzeugResponse> alle(
+            @RequestParam(required = false) Long standortId,
+            @RequestParam(defaultValue = "0") @PositiveOrZero int seite,
+            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int groesse) {
+        return service.alle(standortId, seite, groesse);
+    }
+
     @GetMapping("/verfuegbar")
     public Seite<VerfuegbaresFahrzeug> verfuegbar(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime von,
