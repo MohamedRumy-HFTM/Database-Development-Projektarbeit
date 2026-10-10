@@ -63,6 +63,11 @@ public class Reservation {
         this.erstelltAm = OffsetDateTime.now();
     }
 
+    /** Der Datensatz bleibt erhalten; der Exclusion-Constraint ignoriert stornierte Reservationen. */
+    public void stornieren() {
+        this.status = ReservationStatus.STORNIERT;
+    }
+
     public Long getId() {
         return id;
     }

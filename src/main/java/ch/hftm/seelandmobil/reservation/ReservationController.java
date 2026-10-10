@@ -31,4 +31,9 @@ public class ReservationController {
     public ReservationResponse lesen(@PathVariable Long id) {
         return service.lesen(id);
     }
+
+    @PostMapping("/{id}/stornieren")
+    public ReservationResponse stornieren(@PathVariable Long id) {
+        return service.stornieren(id);
+    }
 }

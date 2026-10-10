@@ -55,6 +55,19 @@ public class ReservationService {
         return ReservationResponse.von(reservationen.saveAndFlush(reservation));
     }
 
+    public ReservationResponse stornieren(Long id) {
+        Reservation reservation = reservationen.findByIdZumAendern(id)
+                .orElseThrow(() -> new NotFoundException("Reservation " + id + " existiert nicht."));
+        if (reservation.getStatus() != ReservationStatus.AKTIV) {
+            throw new ConflictException("Nur aktive Reservationen können storniert werden.");
+        }
+        if (!OffsetDateTime.now(clock).isBefore(reservation.getBeginn())) {
+            throw new ConflictException("Die Reservation hat bereits begonnen und kann nicht mehr storniert werden.");
+        }
+        reservation.stornieren();
+        return ReservationResponse.von(reservationen.saveAndFlush(reservation));
+    }
+
     @Transactional(readOnly = true)
     public ReservationResponse lesen(Long id) {
         return ReservationResponse.von(reservationen.findById(id)
