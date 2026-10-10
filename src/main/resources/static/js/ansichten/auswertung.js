@@ -40,12 +40,17 @@ export async function anzeigen(ziel) {
       const meiste = Math.max(1, ...daten.map((d) => d.anzahlFahrten));
       standortListe.replaceChildren(h('table', {},
         h('thead', {}, h('tr', {}, h('th', {}, 'Abholstandort'), h('th', {}, 'Fahrten'),
-          h('th', { class: 'zahl' }, 'Nutzungsstunden'), h('th', { class: 'zahl' }, 'Kilometer'))),
+          h('th', { class: 'zahl' }, 'Nutzungsstunden'), h('th', { class: 'zahl' }, 'Kilometer'),
+          h('th', { class: 'zahl' }, 'Fahrzeuge'), h('th', {}, 'Auslastung'))),
         h('tbody', {}, daten.map((d) => h('tr', {},
           h('td', {}, d.standortName),
           h('td', {}, balken(d.anzahlFahrten / meiste, ganzzahl(d.anzahlFahrten))),
           h('td', { class: 'zahl' }, zahl(d.nutzungsstunden, 1)),
-          h('td', { class: 'zahl' }, ganzzahl(d.km)))))));
+          h('td', { class: 'zahl' }, ganzzahl(d.km)),
+          h('td', { class: 'zahl' }, ganzzahl(d.anzahlFahrzeuge)),
+          h('td', {}, d.auslastungProzent === null
+            ? h('span', { class: 'klein' }, 'kein Fahrzeug')
+            : balken(d.auslastungProzent / 100, `${zahl(d.auslastungProzent, 1)} %`)))))));
     } catch (fehler) {
       fehlerAnzeigen(info, fehler);
     }
@@ -99,8 +104,9 @@ export async function anzeigen(ziel) {
       h('h2', {}, 'Je Abholstandort'),
       h('p', {}, antwortzeit, ' ',
         h('button', { class: 'knopf knopf-leise knopf-klein', type: 'button', onclick: ladenStandorte }, 'Erneut abfragen'))),
-    h('p', { class: 'klein' }, 'Diese Auswertung wird pro Monat zwischengespeichert. Die erste Abfrage eines Monats liest aus der '
-      + 'Datenbank, jede weitere kommt aus dem Cache (Server meist unter 1 ms), bis eine Fahrt abgeschlossen wird.'),
+    h('p', { class: 'klein' }, 'Auslastung = Nutzungsstunden geteilt durch (Fahrzeuge in Betrieb am Standort × Stunden des Monats). '
+      + 'Die Auswertung wird pro Monat zwischengespeichert: Die erste Abfrage liest aus der Datenbank, jede weitere kommt aus dem '
+      + 'Cache (Server meist unter 1 ms), bis eine Fahrt abgeschlossen oder der Fahrzeugbestand eines Standorts geändert wird.'),
     standortListe,
     h('div', { class: 'abschnitt-kopf' },
       h('h2', {}, 'Je Fahrzeug'),
