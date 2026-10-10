@@ -132,6 +132,25 @@ Die Tests liegen unter `src/test/java/ch/hftm/seelandmobil/`.
 | V8 | View `v_fahrt_nutzung` mit allen abgeschlossenen Fahrten |
 | V9 | Index `ix_reservation_kunde_beginn` für die Reservationsliste eines Kunden (A4) |
 
+## Entscheidungen
+
+| Entscheidung | Begründung | Beleg |
+|---|---|---|
+| Überschneidungen verhindert die Datenbank (Exclusion-Constraint), nicht Java | Eine Prüfung «erst lesen, dann schreiben» sieht gleichzeitige, noch nicht committete Reservationen nicht. Der Constraint lässt die zweite Transaktion warten und lehnt sie nach dem COMMIT der ersten ab. | `ReservationNebenlaeufigkeitTest` |
+| Zeiträume halboffen `[beginn, ende)`, alle Zeitpunkte `TIMESTAMPTZ` | 10–14 und 14–16 überschneiden sich nicht. Zeitpunkte sind auch über den Sommerzeitwechsel eindeutig. | `ReservationApiTest.direktAnschliessenderZeitraumIstErlaubt` |
+| FAHRT als eigene Tabelle (1:0..1) | Rückgabedaten gibt es nur für abgeschlossene Reservationen: keine leeren Spalten, km-Regel als CHECK. A5 wird ein Vorgang über drei Tabellen. | `SchemaConstraintsTest.kmEndeKleinerAlsKmStartWirdAbgelehnt` |
+| Abholstandort in RESERVATION (V7) | Wird ein Fahrzeug verschoben, bleiben frühere Fahrten beim Standort, an dem sie begonnen haben. Ohne ihn wanderten in den Testdaten 16 Fahrten von Biel nach Ins. | `NutzungRepositoryTest` (BE 9104), `AbholstandortMigrationTest` |
+| km-Stand im Fahrzeug gespeichert, mit `version` | Bewusste Redundanz: ableitbar aus der letzten Fahrt, aber oft gelesen. A5 führt ihn in derselben Transaktion nach; `version` verhindert, dass A1 und A5 sich gegenseitig überschreiben. | `FahrtAbschlussTest.gleichzeitigeFahrzeugAenderungRolltAllesZurueck` |
+| A5: Status per bedingtem UPDATE, km-Regel nur in der Datenbank | `WHERE status = 'AKTIV'` schützt gegen einen gleichzeitigen zweiten Abschluss. Das JPQL-Update läuft sofort (Hibernate würde beim Flush INSERTs vor UPDATEs ausführen). Eine zusätzliche Prüfung in Java gäbe zwei Stellen für dieselbe Regel und keinen Schreibzugriff vor dem Fehler. | `FahrtAbschlussTest.kmEndeKleinerAlsKmStandRolltAuchDenStatusZurueck` |
+| Zeilensperren: Fahrzeug `FOR SHARE` beim Reservieren, `FOR UPDATE` bei Standortwechsel und Ausserbetriebnahme, Reservation `FOR UPDATE` beim Storno | A1 prüft «keine offene Reservation», A3 prüft «in Betrieb». Ohne Sperre kämen beide gleichzeitig durch. | `ReservationNebenlaeufigkeitTest.ausserbetriebnahmeWartetAufLaufendeReservation` |
+| Kategorie und Status als `VARCHAR` mit CHECK | Kleine, feste Wertemenge ohne eigene Attribute; passt zu `@Enumerated(STRING)`. Eine Lookup-Tabelle brächte nur zusätzliche Joins. | `SchemaConstraintsTest.unbekannterStatusWirdAbgelehnt` |
+| E-Mail eindeutig über `lower(email)` | «Anna@x.ch» und «anna@x.ch» sind dieselbe Adresse. | `SchemaConstraintsTest.emailIstUnabhaengigVonGrossKleinschreibungEindeutig` |
+| Zugriff je nach Datenbedarf: A4 Entities mit Fetch Join, A6 DTO-Projektion, A7 JDBC | A4 braucht Reservation, Fahrzeug und Standort zusammen; A6 nur sechs Spalten; A7 ist eine Aggregation über die View. | `ReservationslisteAbfragenTest`, `VerfuegbarkeitApiTest`, `NutzungRepositoryTest` |
+| A6 in JPQL statt nativem SQL mit `&&` | Nativ mit `tstzrange(…) && tstzrange(…)` wären es 2.6 statt 16 ms, weil der GiST-Index auch den Zeitraum prüft. JPQL kennt `&&` nicht; 16 ms reichen für eine Suche. | `docs/performance.md` |
+| Zusätzlicher Index nur für A4 | A6 nutzt bereits den GiST-Index des Exclusion-Constraints. A4 las ohne Index die ganze Tabelle. | `docs/performance.md`, `KundenIndexTest` |
+| Cache nur für die Standortauswertung, geleert nach dem COMMIT von A5 | Sie hängt nur von abgeschlossenen Fahrten und Abholstandorten ab, Standorte sind fix. Bei der Fahrzeugauswertung würde schon ein neues Fahrzeug das Ergebnis ändern. Vor dem COMMIT geleert, könnte eine gleichzeitige Abfrage den alten Stand wieder in den Cache legen. | `NutzungCacheTest` |
+| Constraint-Verletzungen werden zu verständlichen Antworten | Die Regel steht einmal in der Datenbank; `ApiExceptionHandler` erkennt den Constraint am Namen und antwortet mit 400 oder 409. | `FahrzeugApiTest.doppeltesKennzeichenGibt409` |
+
 ## Performance
 
 Messungen zu Datenmenge, Index, N+1 und Cache: [docs/performance.md](docs/performance.md).
