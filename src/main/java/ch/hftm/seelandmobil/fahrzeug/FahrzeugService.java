@@ -50,6 +50,15 @@ public class FahrzeugService {
         return FahrzeugResponse.von(fahrzeuge.saveAndFlush(fahrzeug));
     }
 
+    public FahrzeugResponse ausserBetriebNehmen(Long id) {
+        Fahrzeug fahrzeug = laden(id);
+        if (hatOffeneReservationen(id)) {
+            throw new ConflictException("Ausserbetriebnahme nicht möglich: Das Fahrzeug hat offene Reservationen.");
+        }
+        fahrzeug.ausserBetriebNehmen();
+        return FahrzeugResponse.von(fahrzeuge.saveAndFlush(fahrzeug));
+    }
+
     private boolean hatOffeneReservationen(Long fahrzeugId) {
         return reservationen.existsByFahrzeugIdAndStatus(fahrzeugId, ReservationStatus.AKTIV);
     }

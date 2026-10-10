@@ -37,4 +37,9 @@ public class FahrzeugController {
     public FahrzeugResponse aendern(@PathVariable Long id, @Valid @RequestBody FahrzeugAenderung aenderung) {
         return service.aendern(id, aenderung);
     }
+
+    @PostMapping("/{id}/ausser-betrieb")
+    public FahrzeugResponse ausserBetriebNehmen(@PathVariable Long id) {
+        return service.ausserBetriebNehmen(id);
+    }
 }
