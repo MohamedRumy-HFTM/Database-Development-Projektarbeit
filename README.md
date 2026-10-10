@@ -7,6 +7,8 @@ Projektarbeit Database Development, HFTM · Mohamed Rumy · Dozent: Simon Erhard
 Projektsteckbrief: [aktualisierte Fassung](docs/projektsteckbrief.pdf) (Stand der Abgabe) ·
 [eingereichte Fassung vom 07.10.2026](docs/projektsteckbrief-eingereicht.pdf)
 
+**Abgegebener Stand: Git-Tag `v1.0-abgabe`**
+
 ## Für die Bewertung
 
 | Schritt | Was | Abschnitt |
