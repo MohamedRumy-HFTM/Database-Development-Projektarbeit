@@ -220,33 +220,35 @@ Zeitpunkte sind ISO 8601 mit Zeitzone, Zeiträume halboffen `[von, bis)`.
 
 Jeder Prüffall aus dem Projektsteckbrief hat einen automatisierten Test gegen PostgreSQL.
 
-| Anf. | Prüffall | Test |
-|---|---|---|
-| A1 | Doppeltes Kennzeichen → 409 | `FahrzeugApiTest.doppeltesKennzeichenGibt409` |
-| A1 | Standortwechsel mit offener Reservation → 409 | `FahrzeugApiTest.standortwechselMitOffenerReservationGibt409` |
-| A1 | Ausserbetriebnahme mit offener Reservation → 409 | `FahrzeugApiTest.ausserBetriebMitOffenerReservationGibt409` |
-| A1 | Ausser Betrieb: nicht in A6 | `VerfuegbarkeitApiTest.ausserBetriebWirdNieGelistet` |
-| A1 | Ausser Betrieb: Reservation → 409 | `ReservationApiTest.fahrzeugAusserBetriebGibt409` |
-| A1 | Veraltete Version → 409 | `FahrzeugApiTest.veralteteVersionGibt409` |
-| A2 | «Lea.Gerber@Example.ch» nach «lea.gerber@example.ch» → 409 | `KundeApiTest.emailIstUnabhaengigVonGrossKleinschreibungEindeutig` |
-| A2 | Reservation eines gesperrten Kunden → 409 | `ReservationApiTest.gesperrterKundeGibt409` |
-| A3 | 10–14 und 12–16 → zweite 409 | `ReservationApiTest.ueberschneidungGibt409` |
-| A3 | dasselbe gleichzeitig → eine 409 | `ReservationNebenlaeufigkeitTest.gleichzeitigeUeberschneidendeReservationWartetUndScheitert` |
-| A3 | 10–14 und 14–16 → beide 201 | `ReservationApiTest.direktAnschliessenderZeitraumIstErlaubt` |
-| A3 | Nach Storno von 10–14 ist 12–16 möglich | `ReservationApiTest.stornoGibtDenZeitraumFrei` |
-| A3 | Storno nach Beginn → 409 | `ReservationApiTest.stornoNachBeginnGibt409` |
-| A3 | Ende ≤ Beginn → 400 | `ReservationApiTest.endeVorOderGleichBeginnGibt400` |
-| A4 | Seiten 1–3 lückenlos, ohne Duplikate, Reihenfolge stabil | `KundenReservationApiTest.seitenEinsBisDreiSindLueckenlosOhneDuplikateUndStabil` |
-| A4 | SQL zeigt Filter, ORDER BY und Seitenbegrenzung in der Datenbank | `ReservationslisteAbfragenTest.filterSortierungUndSeitenbegrenzungLaufenInDerDatenbank` |
-| A5 | Erfolg: Fahrt, Status und km-Stand geändert | `FahrtAbschlussTest.abschlussFuehrtAlleDreiAenderungenDurch` |
-| A5 | km-Ende < km-Stand → 400, nichts geändert | `FahrtAbschlussTest.kmEndeKleinerAlsKmStandRolltAuchDenStatusZurueck` |
-| A5 | Zweiter Abschluss → 409 | `FahrtAbschlussTest.zweiterAbschlussGibt409` |
-| A6 | Reservation 10–14: fehlt bei 13–15 | `VerfuegbarkeitApiTest.ueberschneidendeReservationSchliesstAus` |
-| A6 | … erscheint bei 14–16 | `VerfuegbarkeitApiTest.direktAnschliessenderZeitraumIstFrei` |
-| A7 | Kontrollierter Datensatz mit bekannten Summen → exakt | `NutzungRepositoryTest.jeStandortExakteSummen`, `.jeFahrzeugMitAuslastung` |
-| A7 | Standorte und Fahrzeuge ohne Fahrt mit 0 | `NutzungRepositoryTest.standorteOhneFahrtErscheinenMitNull` |
-| A7 | Wiederholte Abfrage ohne SQL aus dem Cache | `NutzungCacheTest.zweiterAufrufKommtOhneSqlAusDemCache` |
-| A7 | Nach A5 sofort der neue Wert | `NutzungCacheTest.nachFahrtabschlussSofortDerNeueWert` |
+| Anf. | Prüffall | Umsetzung | Test |
+|---|---|---|---|
+| A1 | Doppeltes Kennzeichen → 409 | `uq_fahrzeug_kennzeichen` (V2), `ApiExceptionHandler` | `FahrzeugApiTest.doppeltesKennzeichenGibt409` |
+| A1 | Standortwechsel mit offener Reservation → 409 | `FahrzeugService.aendern` | `FahrzeugApiTest.standortwechselMitOffenerReservationGibt409` |
+| A1 | Ausserbetriebnahme mit offener Reservation → 409 | `FahrzeugService.ausserBetriebNehmen` | `FahrzeugApiTest.ausserBetriebMitOffenerReservationGibt409` |
+| A1 | Ausser Betrieb: nicht in A6 | `FahrzeugRepository.findeVerfuegbare` (`f.inBetrieb = true`) | `VerfuegbarkeitApiTest.ausserBetriebWirdNieGelistet` |
+| A1 | Ausser Betrieb: Reservation → 409 | `ReservationService.reservieren` | `ReservationApiTest.fahrzeugAusserBetriebGibt409` |
+| A1 | Veraltete Version → 409 | `FahrzeugService.aendern`, `Fahrzeug.version` | `FahrzeugApiTest.veralteteVersionGibt409` |
+| A2 | «Lea.Gerber@Example.ch» nach «lea.gerber@example.ch» → 409 | Index `uq_kunde_email` auf `lower(email)` (V3) | `KundeApiTest.emailIstUnabhaengigVonGrossKleinschreibungEindeutig` |
+| A2 | Reservation eines gesperrten Kunden → 409 | `ReservationService.reservieren` | `ReservationApiTest.gesperrterKundeGibt409` |
+| A3 | 10–14 und 12–16 → zweite 409 | `ex_reservation_ueberschneidung` (V4) | `ReservationApiTest.ueberschneidungGibt409` |
+| A3 | dasselbe gleichzeitig → eine 409 | `ex_reservation_ueberschneidung`, `FahrzeugRepository.findByIdZumReservieren` | `ReservationNebenlaeufigkeitTest.gleichzeitigeUeberschneidendeReservationWartetUndScheitert` |
+| A3 | 10–14 und 14–16 → beide 201 | `tstzrange(beginn, ende, '[)')` im Constraint (V4) | `ReservationApiTest.direktAnschliessenderZeitraumIstErlaubt` |
+| A3 | Nach Storno von 10–14 ist 12–16 möglich | `ReservationService.stornieren`; Constraint nur für `status <> 'STORNIERT'` | `ReservationApiTest.stornoGibtDenZeitraumFrei` |
+| A3 | Storno nach Beginn → 409 | `ReservationService.stornieren` | `ReservationApiTest.stornoNachBeginnGibt409` |
+| A3 | Ende ≤ Beginn → 400 | `ReservationService.reservieren`, `ck_reservation_zeitraum` (V4) | `ReservationApiTest.endeVorOderGleichBeginnGibt400` |
+| A4 | Seiten 1–3 lückenlos, ohne Duplikate, Reihenfolge stabil | `ReservationService.vonKunde`, `ReservationRepository.findeVonKunde` | `KundenReservationApiTest.seitenEinsBisDreiSindLueckenlosOhneDuplikateUndStabil` |
+| A4 | SQL zeigt Filter, ORDER BY und Seitenbegrenzung in der Datenbank | `ReservationRepository.findeVonKundeMitStatus`, Index V9 | `ReservationslisteAbfragenTest.filterSortierungUndSeitenbegrenzungLaufenInDerDatenbank` |
+| A5 | Erfolg: Fahrt, Status und km-Stand geändert | `FahrtService.abschliessen` | `FahrtAbschlussTest.abschlussFuehrtAlleDreiAenderungenDurch` |
+| A5 | km-Ende < km-Stand → 400, nichts geändert | `ck_fahrt_km` (V5), eine Transaktion in `FahrtService.abschliessen` | `FahrtAbschlussTest.kmEndeKleinerAlsKmStandRolltAuchDenStatusZurueck` |
+| A5 | Zweiter Abschluss → 409 | `ReservationRepository.statusAendern` (bedingtes UPDATE) | `FahrtAbschlussTest.zweiterAbschlussGibt409` |
+| A6 | Reservation 10–14: fehlt bei 13–15 | `FahrzeugRepository.findeVerfuegbare` (`not exists`) | `VerfuegbarkeitApiTest.ueberschneidendeReservationSchliesstAus` |
+| A6 | … erscheint bei 14–16 | `FahrzeugRepository.findeVerfuegbare` | `VerfuegbarkeitApiTest.direktAnschliessenderZeitraumIstFrei` |
+| A7 | Kontrollierter Datensatz mit bekannten Summen → exakt | `NutzungRepository.jeStandort`, `.jeFahrzeug`, View `v_fahrt_nutzung` (V8) | `NutzungRepositoryTest.jeStandortExakteSummen`, `.jeFahrzeugMitAuslastung` |
+| A7 | Auslastung je Standort mit Fahrzeugbestand | `NutzungRepository.jeStandort` (Bestand vorab gezählt) | `NutzungRepositoryTest.jeStandortMitFahrzeugbestandUndAuslastung` |
+| A7 | Standorte und Fahrzeuge ohne Fahrt mit 0 | `LEFT JOIN`, `COUNT(v.reservation_id)` in `NutzungRepository` | `NutzungRepositoryTest.standorteOhneFahrtErscheinenMitNull` |
+| A7 | Wiederholte Abfrage ohne SQL aus dem Cache | `NutzungService.jeStandort` (`@Cacheable`) | `NutzungCacheTest.zweiterAufrufKommtOhneSqlAusDemCache` |
+| A7 | Nach A5 sofort der neue Wert | `StandortNutzungCacheLeeren` | `NutzungCacheTest.nachFahrtabschlussSofortDerNeueWert` |
+| A7 | Nach neuem Fahrzeug sofort der neue Bestand | `StandortNutzungCacheLeeren`, `FahrzeugService` | `NutzungCacheTest.nachNeuemFahrzeugSofortDerNeueBestand` |
 
 Weitere Fälle (400, 404, Filter, Grenzen) stehen in denselben Testklassen unter `src/test/java/ch/hftm/seelandmobil/`.
 
