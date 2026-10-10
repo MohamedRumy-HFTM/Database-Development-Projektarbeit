@@ -1,5 +1,6 @@
 package ch.hftm.seelandmobil.common;
 
+import org.springframework.beans.TypeMismatchException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpHeaders;
@@ -12,6 +13,8 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import java.util.Map;
@@ -48,6 +51,28 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
                 .forEach(f -> fehler.putIfAbsent(f.getField(), f.getDefaultMessage()));
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Die Eingabe ist ungültig.");
         problem.setProperty("fehler", fehler);
+        return handleExceptionInternal(ex, problem, headers, status, request);
+    }
+
+    /** Verletzte Regeln an Query-Parametern, z. B. groesse > 100. */
+    @Override
+    protected ResponseEntity<Object> handleHandlerMethodValidationException(HandlerMethodValidationException ex,
+            HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+        Map<String, String> fehler = new TreeMap<>();
+        ex.getParameterValidationResults().forEach(ergebnis -> ergebnis.getResolvableErrors().forEach(
+                f -> fehler.putIfAbsent(ergebnis.getMethodParameter().getParameterName(), f.getDefaultMessage())));
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Die Eingabe ist ungültig.");
+        problem.setProperty("fehler", fehler);
+        return handleExceptionInternal(ex, problem, headers, status, request);
+    }
+
+    /** Query-Parameter mit falschem Typ, z. B. status=UNBEKANNT oder ein ungültiges Datum. */
+    @Override
+    protected ResponseEntity<Object> handleTypeMismatch(TypeMismatchException ex,
+            HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+        String name = ex instanceof MethodArgumentTypeMismatchException m ? m.getName() : ex.getPropertyName();
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Die Eingabe ist ungültig.");
+        problem.setProperty("fehler", Map.of(String.valueOf(name), "ungültiger Wert '" + ex.getValue() + "'"));
         return handleExceptionInternal(ex, problem, headers, status, request);
     }
 
