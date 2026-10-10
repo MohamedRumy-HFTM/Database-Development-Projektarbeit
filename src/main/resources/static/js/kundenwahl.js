@@ -6,16 +6,20 @@ import { h } from './dom.js';
 export function kundenwahl({ beschriftung = 'Kunde', vorauswahl = null, gewaehlt: beiWahl }) {
   let aktuell = null;
   let zeitgeber;
-  const feld = h('input', { type: 'search', placeholder: 'Name oder E-Mail', autocomplete: 'off' });
+  let anfrage = 0;
+  const feld = h('input', { type: 'search', placeholder: 'Name, E-Mail oder Nummer', autocomplete: 'off' });
   const liste = h('ul', { class: 'treffer' });
   const anzeige = h('div');
   const suche = h('label', {}, beschriftung, feld);
   const wurzel = h('div', { class: 'kundenwahl' }, suche, liste, anzeige);
 
+  /** Leeres Feld: die ersten Kunden nach Name, damit man ohne Vorwissen einen findet. */
   async function suchen() {
     const text = feld.value.trim();
-    if (text.length < 2) { liste.replaceChildren(); return; }
+    if (text.length === 1) { liste.replaceChildren(); return; }
+    const nummer = ++anfrage;
     const seite = await lesen('/api/kunden', { suche: text, groesse: 8 });
+    if (nummer !== anfrage || aktuell) return;
     liste.replaceChildren(...(seite.inhalt.length
       ? seite.inhalt.map((kunde) => h('li', {}, h('button', { type: 'button', onclick: () => waehlen(kunde) },
           h('span', {}, kunde.name, kunde.gesperrt ? ' (gesperrt)' : ''), h('small', {}, kunde.email))))
@@ -47,6 +51,7 @@ export function kundenwahl({ beschriftung = 'Kunde', vorauswahl = null, gewaehlt
     clearTimeout(zeitgeber);
     zeitgeber = setTimeout(suchen, 250);
   });
+  feld.addEventListener('focus', () => { if (!feld.value.trim()) suchen(); });
 
   if (vorauswahl) waehlen(vorauswahl);
 
