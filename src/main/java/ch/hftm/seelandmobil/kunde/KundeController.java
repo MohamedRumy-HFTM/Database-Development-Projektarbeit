@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -30,5 +31,15 @@ public class KundeController {
     @GetMapping("/{id}")
     public KundeResponse lesen(@PathVariable Long id) {
         return service.lesen(id);
+    }
+
+    @PutMapping("/{id}")
+    public KundeResponse aendern(@PathVariable Long id, @Valid @RequestBody KundeRequest request) {
+        return service.aendern(id, request);
+    }
+
+    @PostMapping("/{id}/sperren")
+    public KundeResponse sperren(@PathVariable Long id) {
+        return service.sperren(id);
     }
 }

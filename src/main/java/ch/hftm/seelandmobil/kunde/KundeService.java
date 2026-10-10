@@ -24,6 +24,19 @@ public class KundeService {
         return KundeResponse.von(laden(id));
     }
 
+    public KundeResponse aendern(Long id, KundeRequest request) {
+        Kunde kunde = laden(id);
+        kunde.aendern(request.name().strip(), request.email().strip());
+        return KundeResponse.von(kunden.saveAndFlush(kunde));
+    }
+
+    /** Gesperrte Kunden können keine neuen Reservationen mehr anlegen (A3). */
+    public KundeResponse sperren(Long id) {
+        Kunde kunde = laden(id);
+        kunde.sperren();
+        return KundeResponse.von(kunden.saveAndFlush(kunde));
+    }
+
     private Kunde laden(Long id) {
         return kunden.findById(id)
                 .orElseThrow(() -> new NotFoundException("Kunde " + id + " existiert nicht."));
