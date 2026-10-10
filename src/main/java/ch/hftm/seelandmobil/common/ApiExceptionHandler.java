@@ -79,8 +79,10 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(DataIntegrityViolationException.class)
     ProblemDetail datenbankregelVerletzt(DataIntegrityViolationException ex) {
         String ursache = String.valueOf(ex.getMostSpecificCause().getMessage());
+        // PostgreSQL nennt den Constraint in Anführungszeichen; so passt "ck_fahrt_km"
+        // nicht versehentlich auf "ck_fahrt_km_start".
         Regel regel = DATENBANKREGELN.entrySet().stream()
-                .filter(eintrag -> ursache.contains(eintrag.getKey()))
+                .filter(eintrag -> ursache.contains("\"" + eintrag.getKey() + "\""))
                 .map(Map.Entry::getValue)
                 .findFirst()
                 .orElse(new Regel(HttpStatus.CONFLICT, "Die Änderung verletzt eine Datenbankregel."));
