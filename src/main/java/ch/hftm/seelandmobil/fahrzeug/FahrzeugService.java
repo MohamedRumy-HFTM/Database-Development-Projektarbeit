@@ -37,7 +37,7 @@ public class FahrzeugService {
     }
 
     public FahrzeugResponse aendern(Long id, FahrzeugAenderung aenderung) {
-        Fahrzeug fahrzeug = laden(id);
+        Fahrzeug fahrzeug = ladenZumAendern(id);
         if (fahrzeug.getVersion() != aenderung.version()) {
             throw new ConflictException("Das Fahrzeug wurde zwischenzeitlich geändert. Bitte neu laden.");
         }
@@ -51,7 +51,7 @@ public class FahrzeugService {
     }
 
     public FahrzeugResponse ausserBetriebNehmen(Long id) {
-        Fahrzeug fahrzeug = laden(id);
+        Fahrzeug fahrzeug = ladenZumAendern(id);
         if (hatOffeneReservationen(id)) {
             throw new ConflictException("Ausserbetriebnahme nicht möglich: Das Fahrzeug hat offene Reservationen.");
         }
@@ -65,6 +65,12 @@ public class FahrzeugService {
 
     private Fahrzeug laden(Long id) {
         return fahrzeuge.findById(id)
+                .orElseThrow(() -> new NotFoundException("Fahrzeug " + id + " existiert nicht."));
+    }
+
+    /** Sperrt das Fahrzeug, damit während der Prüfung keine neue Reservation entsteht (siehe A3). */
+    private Fahrzeug ladenZumAendern(Long id) {
+        return fahrzeuge.findByIdZumAendern(id)
                 .orElseThrow(() -> new NotFoundException("Fahrzeug " + id + " existiert nicht."));
     }
 
