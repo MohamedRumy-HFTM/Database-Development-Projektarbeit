@@ -1,0 +1,222 @@
+/* Seeland Mobil – Oberfläche für die Disposition.
+   Schrift: Barlow (SIL Open Font License 1.1, siehe fonts/OFL.txt), lokal eingebunden. */
+
+@font-face { font-family: "Barlow"; font-weight: 400; font-display: swap; src: url("../fonts/barlow-latin-400-normal.woff2") format("woff2"); }
+@font-face { font-family: "Barlow"; font-weight: 500; font-display: swap; src: url("../fonts/barlow-latin-500-normal.woff2") format("woff2"); }
+@font-face { font-family: "Barlow"; font-weight: 600; font-display: swap; src: url("../fonts/barlow-latin-600-normal.woff2") format("woff2"); }
+@font-face { font-family: "Barlow Semi Condensed"; font-weight: 500; font-display: swap; src: url("../fonts/barlow-semi-condensed-latin-500-normal.woff2") format("woff2"); }
+@font-face { font-family: "Barlow Semi Condensed"; font-weight: 600; font-display: swap; src: url("../fonts/barlow-semi-condensed-latin-600-normal.woff2") format("woff2"); }
+@font-face { font-family: "Barlow Semi Condensed"; font-weight: 700; font-display: swap; src: url("../fonts/barlow-semi-condensed-latin-700-normal.woff2") format("woff2"); }
+
+:root {
+  --tinte: #1c2321;
+  --tinte-leise: #55605d;
+  --see: #1f6f78;
+  --see-dunkel: #175860;
+  --see-hell: #e2eff0;
+  --rot: #c8102e;
+  --rot-hell: #fbe8eb;
+  --gruen: #4e7a3a;
+  --gruen-hell: #eaf2e5;
+  --linie: #cdd5d3;
+  --flaeche: #eff3f2;
+  --papier: #fbfcfb;
+  --schmal: "Barlow Semi Condensed", "Arial Narrow", sans-serif;
+  --text: "Barlow", system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+html { font-size: 15.5px; }
+
+body {
+  margin: 0;
+  font-family: var(--text);
+  line-height: 1.45;
+  color: var(--tinte);
+  background: var(--papier);
+  display: grid;
+  grid-template-columns: 13.5rem 1fr;
+  min-height: 100vh;
+}
+
+/* Navigation */
+.leiste {
+  background: var(--flaeche);
+  border-right: 1px solid var(--linie);
+  padding: 1.6rem 0 1.2rem;
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+.marke { padding: 0 1.4rem 1.6rem; }
+.marke-name { font-family: var(--schmal); font-weight: 700; font-size: 1.55rem; line-height: 1.05; margin: 0; letter-spacing: .01em; }
+.marke-zusatz { margin: .3rem 0 0; color: var(--tinte-leise); font-size: .9rem; }
+.leiste nav ul { list-style: none; margin: 0; padding: 0; }
+.leiste nav a {
+  display: block;
+  padding: .55rem 1.4rem .55rem calc(1.4rem - 3px);
+  border-left: 3px solid transparent;
+  color: var(--tinte);
+  text-decoration: none;
+  font-family: var(--schmal);
+  font-weight: 600;
+  font-size: 1.08rem;
+}
+.leiste nav a:hover { background: var(--see-hell); }
+.leiste nav a[aria-current="page"] { border-left-color: var(--see); color: var(--see-dunkel); background: var(--see-hell); }
+.leiste-fuss { margin-top: auto; padding: 0 1.4rem; font-size: .9rem; }
+.leiste-fuss a { color: var(--tinte-leise); }
+
+/* Inhalt */
+main { padding: 2rem 2.4rem 4rem; max-width: 72rem; width: 100%; }
+h1, h2, h3 { font-family: var(--schmal); font-weight: 600; line-height: 1.15; margin: 0; }
+h1 { font-size: 2rem; }
+h2 { font-size: 1.35rem; margin: 2.4rem 0 .7rem; }
+h3 { font-size: 1.1rem; }
+.einleitung { color: var(--tinte-leise); margin: .4rem 0 1.6rem; max-width: 62ch; }
+p { margin: .5rem 0; }
+a { color: var(--see-dunkel); }
+
+/* Nummernschild – das Erkennungsmerkmal */
+.schild {
+  display: inline-block;
+  font-family: var(--schmal);
+  font-weight: 600;
+  font-size: 1rem;
+  letter-spacing: .06em;
+  line-height: 1.25;
+  white-space: nowrap;
+  background: #fff;
+  color: #111;
+  border: 1.5px solid var(--tinte);
+  border-radius: 4px;
+  padding: .05rem .5rem;
+  box-shadow: inset 0 0 0 2px #fff, inset 0 0 0 3px #d9dedd;
+}
+.schild-gross { font-size: 1.5rem; padding: .1rem .7rem; }
+
+/* Formulare */
+form.zeile, .zeile { display: flex; flex-wrap: wrap; gap: .8rem 1rem; align-items: flex-end; }
+label { display: flex; flex-direction: column; gap: .25rem; font-size: .88rem; color: var(--tinte-leise); }
+input, select {
+  font: inherit;
+  font-size: 1rem;
+  color: var(--tinte);
+  background: #fff;
+  border: 1px solid var(--linie);
+  border-radius: 4px;
+  padding: .45rem .6rem;
+  min-height: 2.35rem;
+}
+input[type="number"] { width: 8rem; }
+input:focus-visible, select:focus-visible, button:focus-visible, a:focus-visible {
+  outline: 2px solid var(--see);
+  outline-offset: 2px;
+}
+
+/* Knöpfe */
+button { font: inherit; cursor: pointer; }
+.knopf {
+  font-family: var(--schmal);
+  font-weight: 600;
+  font-size: 1rem;
+  background: var(--see);
+  color: #fff;
+  border: 1px solid var(--see);
+  border-radius: 4px;
+  padding: .45rem 1rem;
+  min-height: 2.35rem;
+}
+.knopf:hover { background: var(--see-dunkel); }
+.knopf-zeile { background: transparent; color: var(--see-dunkel); border-color: var(--see); }
+.knopf-zeile:hover { background: var(--see-hell); }
+.knopf-leise { background: transparent; color: var(--tinte); border-color: var(--linie); }
+.knopf-leise:hover { background: var(--flaeche); }
+.knopf-warn { background: transparent; color: var(--rot); border-color: var(--rot); }
+.knopf-warn:hover { background: var(--rot-hell); }
+.knopf:disabled { opacity: .45; cursor: not-allowed; }
+.knopf-klein { padding: .2rem .6rem; min-height: 1.9rem; font-size: .95rem; }
+
+/* Tabellen */
+.rahmen { overflow-x: auto; margin-top: 1rem; }
+table { width: 100%; border-collapse: collapse; }
+th {
+  text-align: left;
+  font-weight: 600;
+  font-size: .85rem;
+  color: var(--tinte-leise);
+  padding: .5rem .7rem;
+  border-bottom: 1.5px solid var(--tinte);
+  white-space: nowrap;
+}
+td { padding: .55rem .7rem; border-bottom: 1px solid var(--linie); vertical-align: middle; }
+td.zahl, th.zahl { text-align: right; font-variant-numeric: tabular-nums; }
+td.aktionen { text-align: right; white-space: nowrap; }
+td.aktionen .knopf + .knopf { margin-left: .4rem; }
+tr.bearbeiten td { background: var(--flaeche); }
+.leer { color: var(--tinte-leise); padding: 1.2rem .7rem; }
+
+/* Status */
+.status { font-family: var(--schmal); font-weight: 600; font-size: .95rem; white-space: nowrap; }
+.status::before { content: ""; display: inline-block; width: .55em; height: .55em; border-radius: 50%; margin-right: .4em; background: currentColor; vertical-align: .05em; }
+.status-AKTIV, .status-inBetrieb { color: var(--see-dunkel); }
+.status-ABGESCHLOSSEN { color: var(--tinte-leise); }
+.status-STORNIERT, .status-ausserBetrieb, .status-gesperrt { color: var(--rot); }
+.status-STORNIERT { text-decoration: line-through; }
+
+/* Meldungen */
+.meldung { margin: 1rem 0; padding: .7rem 1rem; border-left: 4px solid; max-width: 62rem; }
+.meldung-ok { border-color: var(--gruen); background: var(--gruen-hell); }
+.meldung-fehler { border-color: var(--rot); background: var(--rot-hell); }
+.meldung ul { margin: .3rem 0 0; padding-left: 1.2rem; }
+
+/* Seiten */
+.seiten { display: flex; gap: .6rem; align-items: center; margin-top: .9rem; color: var(--tinte-leise); font-size: .92rem; }
+
+/* Kundenwahl */
+.kundenwahl { max-width: 34rem; }
+.kundenwahl input[type="search"] { width: 100%; }
+.treffer { list-style: none; margin: .3rem 0 0; padding: 0; border: 1px solid var(--linie); border-radius: 4px; background: #fff; }
+.treffer:empty { display: none; }
+.treffer button { display: flex; justify-content: space-between; gap: 1rem; width: 100%; text-align: left; background: none; border: 0; border-bottom: 1px solid var(--linie); padding: .5rem .7rem; color: var(--tinte); }
+.treffer li:last-child button { border-bottom: 0; }
+.treffer button:hover { background: var(--see-hell); }
+.treffer small { color: var(--tinte-leise); }
+.gewaehlt { display: flex; align-items: baseline; gap: .8rem; flex-wrap: wrap; padding: .55rem .8rem; background: var(--see-hell); border-radius: 4px; }
+.gewaehlt strong { font-family: var(--schmal); font-size: 1.15rem; }
+
+/* Gleichzeitig buchen */
+.bahnen { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; margin-top: 1rem; max-width: 52rem; }
+.bahn { border-top: 3px solid var(--linie); padding-top: .7rem; }
+.bahn-ok { border-top-color: var(--gruen); }
+.bahn-fehler { border-top-color: var(--rot); }
+.bahn-code { font-family: var(--schmal); font-weight: 700; font-size: 3rem; line-height: 1; margin: .4rem 0 .2rem; font-variant-numeric: tabular-nums; }
+.bahn-ok .bahn-code { color: var(--gruen); }
+.bahn-fehler .bahn-code { color: var(--rot); }
+.bahn-wartet .bahn-code { color: var(--linie); }
+.bahn p { margin: .2rem 0; }
+.klein { font-size: .88rem; color: var(--tinte-leise); }
+
+/* Balken der Auswertung */
+.balken { display: flex; align-items: center; gap: .6rem; min-width: 12rem; }
+.balken-spur { flex: 1; height: .7rem; background: var(--flaeche); border-radius: 2px; overflow: hidden; }
+.balken-wert { height: 100%; background: var(--see); }
+.balken-zahl { width: 4.2rem; text-align: right; font-variant-numeric: tabular-nums; }
+
+.abschnitt-kopf { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; flex-wrap: wrap; }
+
+@media (max-width: 760px) {
+  body { grid-template-columns: 1fr; }
+  .leiste { position: static; height: auto; padding: 1rem 0 0; border-right: 0; border-bottom: 1px solid var(--linie); }
+  .marke { padding: 0 1rem .8rem; }
+  .leiste nav ul { display: flex; overflow-x: auto; }
+  .leiste nav a { border-left: 0; border-bottom: 3px solid transparent; padding: .5rem .9rem; white-space: nowrap; }
+  .leiste nav a[aria-current="page"] { border-bottom-color: var(--see); }
+  .leiste-fuss { display: none; }
+  main { padding: 1.4rem 1rem 3rem; }
+  .bahnen { grid-template-columns: 1fr; }
+}
