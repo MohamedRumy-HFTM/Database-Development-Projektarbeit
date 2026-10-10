@@ -347,6 +347,7 @@ In Windows PowerShell wie bei den Testdaten mit `docker compose cp` und `psql -f
 
 | Dokument | Inhalt |
 |---|---|
+| [Eigenstaendigkeitserklaerung.pdf](Eigenstaendigkeitserklaerung.pdf) | Eigenständigkeitserklärung mit Erklärung zum KI-Einsatz und Bestätigung |
 | [Hilfsmittelverzeichnis.pdf](Hilfsmittelverzeichnis.pdf) | Werkzeuge mit Version, Einsatzzweck und betroffenen Dateien |
 | [Prompt-Verzeichnis.pdf](Prompt-Verzeichnis.pdf) | Prompts mit Ziel, Nutzung des Outputs, eigener Bearbeitung und betroffenen Commits; Kennzeichnung der KI-Unterstützung im Repository |
 
