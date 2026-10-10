@@ -173,6 +173,7 @@ tr.bearbeiten td { background: var(--flaeche); }
 .meldung-ok { border-color: var(--gruen); background: var(--gruen-hell); }
 .meldung-fehler { border-color: var(--rot); background: var(--rot-hell); }
 .meldung ul { margin: .3rem 0 0; padding-left: 1.2rem; }
+.meldung-code { font-family: var(--schmal); font-weight: 700; color: var(--rot); margin-right: .55rem; font-variant-numeric: tabular-nums; }
 
 /* Seiten */
 .seiten { display: flex; gap: .6rem; align-items: center; margin-top: .9rem; color: var(--tinte-leise); font-size: .92rem; }

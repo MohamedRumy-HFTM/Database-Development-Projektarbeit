@@ -75,6 +75,10 @@ export function meldungsbereich() {
 /** Zeigt einen ApiFehler oder einen unerwarteten Fehler an. */
 export function fehlerAnzeigen(bereich, fehler) {
   meldung(bereich, 'fehler', fehler.message, fehler.fehler);
+  // HTTP-Status mit anzeigen, damit sich die Antwort direkt mit API und Tests vergleichen lässt.
+  if (fehler.status) {
+    bereich.firstChild.prepend(h('span', { class: 'meldung-code', title: 'HTTP-Status' }, String(fehler.status)));
+  }
 }
 
 /** Seitenwahl unter einer Liste. seite beginnt bei 0. */
