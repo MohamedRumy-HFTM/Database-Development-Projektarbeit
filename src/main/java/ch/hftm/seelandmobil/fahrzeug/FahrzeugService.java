@@ -1,6 +1,9 @@
 package ch.hftm.seelandmobil.fahrzeug;
 
+import ch.hftm.seelandmobil.common.ConflictException;
 import ch.hftm.seelandmobil.common.NotFoundException;
+import ch.hftm.seelandmobil.reservation.ReservationRepository;
+import ch.hftm.seelandmobil.reservation.ReservationStatus;
 import ch.hftm.seelandmobil.standort.Standort;
 import ch.hftm.seelandmobil.standort.StandortRepository;
 import org.springframework.stereotype.Service;
@@ -12,10 +15,13 @@ public class FahrzeugService {
 
     private final FahrzeugRepository fahrzeuge;
     private final StandortRepository standorte;
+    private final ReservationRepository reservationen;
 
-    public FahrzeugService(FahrzeugRepository fahrzeuge, StandortRepository standorte) {
+    public FahrzeugService(FahrzeugRepository fahrzeuge, StandortRepository standorte,
+                           ReservationRepository reservationen) {
         this.fahrzeuge = fahrzeuge;
         this.standorte = standorte;
+        this.reservationen = reservationen;
     }
 
     public FahrzeugResponse erfassen(FahrzeugRequest request) {
@@ -28,6 +34,24 @@ public class FahrzeugService {
     @Transactional(readOnly = true)
     public FahrzeugResponse lesen(Long id) {
         return FahrzeugResponse.von(laden(id));
+    }
+
+    public FahrzeugResponse aendern(Long id, FahrzeugAenderung aenderung) {
+        Fahrzeug fahrzeug = laden(id);
+        if (fahrzeug.getVersion() != aenderung.version()) {
+            throw new ConflictException("Das Fahrzeug wurde zwischenzeitlich geändert. Bitte neu laden.");
+        }
+        Standort standort = standortLaden(aenderung.standortId());
+        boolean standortwechsel = !standort.getId().equals(fahrzeug.getStandort().getId());
+        if (standortwechsel && hatOffeneReservationen(id)) {
+            throw new ConflictException("Standortwechsel nicht möglich: Das Fahrzeug hat offene Reservationen.");
+        }
+        fahrzeug.aendern(aenderung.kennzeichen(), aenderung.modell(), aenderung.kategorie(), standort);
+        return FahrzeugResponse.von(fahrzeuge.saveAndFlush(fahrzeug));
+    }
+
+    private boolean hatOffeneReservationen(Long fahrzeugId) {
+        return reservationen.existsByFahrzeugIdAndStatus(fahrzeugId, ReservationStatus.AKTIV);
     }
 
     private Fahrzeug laden(Long id) {
