@@ -13,7 +13,8 @@
 
 \set ON_ERROR_STOP on
 \pset footer off
-ANALYZE reservation;
+-- Definierter Ausgangszustand wie nach Autovacuum: Visibility Map gesetzt, Statistiken aktuell.
+VACUUM ANALYZE reservation;
 
 \echo
 \echo '== Umgebung und Datenmenge =='
@@ -112,8 +113,7 @@ DROP INDEX IF EXISTS ix_reservation_kunde_beginn;
 SELECT pg_temp.median_ms((SELECT sql FROM szenario WHERE nr = 1)) AS ohne1,
        pg_temp.median_ms((SELECT sql FROM szenario WHERE nr = 2)) AS ohne2,
        pg_temp.median_ms((SELECT sql FROM szenario WHERE nr = 3)) AS ohne3,
-       pg_temp.median_ms((SELECT sql FROM szenario WHERE nr = 4)) AS ohne4,
-       pg_temp.einfuegen_ms(10000) AS ohne_insert \gset
+       pg_temp.median_ms((SELECT sql FROM szenario WHERE nr = 4)) AS ohne4 \gset
 \echo 'Plan Vielfahrer, Seite 1:'
 SELECT 'EXPLAIN (ANALYZE, BUFFERS, COSTS OFF) ' || sql FROM szenario WHERE nr = 1 \gexec
 ROLLBACK;
@@ -126,10 +126,21 @@ SELECT coalesce(pg_size_pretty(pg_relation_size(to_regclass('ix_reservation_kund
 SELECT pg_temp.median_ms((SELECT sql FROM szenario WHERE nr = 1)) AS mit1,
        pg_temp.median_ms((SELECT sql FROM szenario WHERE nr = 2)) AS mit2,
        pg_temp.median_ms((SELECT sql FROM szenario WHERE nr = 3)) AS mit3,
-       pg_temp.median_ms((SELECT sql FROM szenario WHERE nr = 4)) AS mit4,
-       pg_temp.einfuegen_ms(10000) AS mit_insert \gset
+       pg_temp.median_ms((SELECT sql FROM szenario WHERE nr = 4)) AS mit4 \gset
 \echo 'Plan Vielfahrer, Seite 1:'
 SELECT 'EXPLAIN (ANALYZE, BUFFERS, COSTS OFF) ' || sql FROM szenario WHERE nr = 1 \gexec
+\echo 'Plan Vielfahrer, Count:'
+SELECT 'EXPLAIN (ANALYZE, BUFFERS, COSTS OFF) ' || sql FROM szenario WHERE nr = 3 \gexec
+
+-- Schreibkosten zuletzt: Auch zurückgerollte INSERTs verändern Tabellenseiten (Visibility Map)
+-- und würden sonst die Lesemessungen danach verfälschen.
+\echo
+\echo '== Schreibkosten =='
+BEGIN;
+DROP INDEX IF EXISTS ix_reservation_kunde_beginn;
+SELECT pg_temp.einfuegen_ms(10000) AS ohne_insert \gset
+ROLLBACK;
+SELECT pg_temp.einfuegen_ms(10000) AS mit_insert \gset
 
 \echo
 \echo '== Ergebnis (Median aus 5 Läufen, ms) =='

@@ -132,7 +132,9 @@ SET km_stand = coalesce((SELECT max(f.km_ende)
 
 COMMIT;
 
-ANALYZE;
+-- VACUUM setzt die Visibility Map; erst dann sind Index Only Scans ohne Heap-Zugriffe möglich
+-- (im Betrieb erledigt das Autovacuum). ANALYZE aktualisiert die Statistiken für den Planer.
+VACUUM ANALYZE;
 
 SELECT 'fahrzeug' AS tabelle, count(*) AS anzahl FROM fahrzeug
 UNION ALL SELECT 'kunde', count(*) FROM kunde
