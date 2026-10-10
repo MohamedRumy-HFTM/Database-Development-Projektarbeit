@@ -345,7 +345,10 @@ In Windows PowerShell wie bei den Testdaten mit `docker compose cp` und `psql -f
 
 ## KI und Hilfsmittel
 
-Hilfsmittelverzeichnis: [Hilfsmittelverzeichnis.pdf](Hilfsmittelverzeichnis.pdf)
+| Dokument | Inhalt |
+|---|---|
+| [Hilfsmittelverzeichnis.pdf](Hilfsmittelverzeichnis.pdf) | Werkzeuge mit Version, Einsatzzweck und betroffenen Dateien |
+| [Prompt-Verzeichnis.pdf](Prompt-Verzeichnis.pdf) | Prompts mit Ziel, Nutzung des Outputs, eigener Bearbeitung und betroffenen Commits; Kennzeichnung der KI-Unterstützung im Repository |
 
 ## Projektstruktur
 
