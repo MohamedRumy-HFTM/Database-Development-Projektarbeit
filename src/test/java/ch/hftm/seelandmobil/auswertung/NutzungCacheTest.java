@@ -1,6 +1,9 @@
 package ch.hftm.seelandmobil.auswertung;
 
 import ch.hftm.seelandmobil.TestcontainersConfiguration;
+import ch.hftm.seelandmobil.fahrzeug.FahrzeugRequest;
+import ch.hftm.seelandmobil.fahrzeug.FahrzeugService;
+import ch.hftm.seelandmobil.fahrzeug.Kategorie;
 import ch.hftm.seelandmobil.reservation.FahrtAbschluss;
 import ch.hftm.seelandmobil.reservation.FahrtService;
 import org.junit.jupiter.api.AfterEach;
@@ -46,6 +49,9 @@ class NutzungCacheTest {
     private FahrtService fahrtService;
 
     @Autowired
+    private FahrzeugService fahrzeugService;
+
+    @Autowired
     private CacheManager cacheManager;
 
     @Autowired
@@ -58,13 +64,14 @@ class NutzungCacheTest {
     private final OffsetDateTime von = jetzt.minusDays(2);
     private final OffsetDateTime bis = jetzt.plusDays(1);
 
+    private long bueren;
     private long kunde;
     private long fahrzeug;
     private long laufendeReservation;
 
     @BeforeEach
     void testdaten() {
-        long bueren = jdbc.queryForObject("select id from standort where name = 'Büren a.A.'", Long.class);
+        bueren = jdbc.queryForObject("select id from standort where name = 'Büren a.A.'", Long.class);
         kunde = jdbc.queryForObject(
                 "insert into kunde (name, email) values ('Tim Roth', 'tim.roth@example.ch') returning id", Long.class);
         fahrzeug = jdbc.queryForObject("""
@@ -85,7 +92,7 @@ class NutzungCacheTest {
         jdbc.update("delete from fahrt where reservation_id in (select id from reservation where fahrzeug_id = ?)",
                 fahrzeug);
         jdbc.update("delete from reservation where fahrzeug_id = ?", fahrzeug);
-        jdbc.update("delete from fahrzeug where id = ?", fahrzeug);
+        jdbc.update("delete from fahrzeug where id = ? or kennzeichen = 'BE 9202'", fahrzeug);
         jdbc.update("delete from kunde where id = ?", kunde);
         cacheManager.getCache(NutzungService.STANDORT_CACHE).clear();
     }
@@ -105,6 +112,17 @@ class NutzungCacheTest {
         fahrtService.abschliessen(laufendeReservation, new FahrtAbschluss(5120, jetzt.minusMinutes(5)));
 
         assertThat(fahrtenBueren()).isEqualTo(2);
+        verify(repository, times(2)).jeStandort(any(), any(), any());
+    }
+
+    /** Ein neues Fahrzeug ändert den Nenner der Standort-Auslastung: Der Cache wird geleert. */
+    @Test
+    void nachNeuemFahrzeugSofortDerNeueBestand() {
+        long vorher = standortBueren().anzahlFahrzeuge();
+
+        fahrzeugService.erfassen(new FahrzeugRequest("BE 9202", "Dacia Sandero", Kategorie.KLEIN, 0, bueren));
+
+        assertThat(standortBueren().anzahlFahrzeuge()).isEqualTo(vorher + 1);
         verify(repository, times(2)).jeStandort(any(), any(), any());
     }
 

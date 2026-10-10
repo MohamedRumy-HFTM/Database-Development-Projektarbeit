@@ -8,6 +8,7 @@ import ch.hftm.seelandmobil.reservation.ReservationRepository;
 import ch.hftm.seelandmobil.reservation.ReservationStatus;
 import ch.hftm.seelandmobil.standort.Standort;
 import ch.hftm.seelandmobil.standort.StandortRepository;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,19 +22,22 @@ public class FahrzeugService {
     private final FahrzeugRepository fahrzeuge;
     private final StandortRepository standorte;
     private final ReservationRepository reservationen;
+    private final ApplicationEventPublisher ereignisse;
 
     public FahrzeugService(FahrzeugRepository fahrzeuge, StandortRepository standorte,
-                           ReservationRepository reservationen) {
+                           ReservationRepository reservationen, ApplicationEventPublisher ereignisse) {
         this.fahrzeuge = fahrzeuge;
         this.standorte = standorte;
         this.reservationen = reservationen;
+        this.ereignisse = ereignisse;
     }
 
     public FahrzeugResponse erfassen(FahrzeugRequest request) {
         Standort standort = standortLaden(request.standortId());
-        Fahrzeug fahrzeug = new Fahrzeug(request.kennzeichen(), request.modell(), request.kategorie(),
-                request.kmStand(), standort);
-        return FahrzeugResponse.von(fahrzeuge.saveAndFlush(fahrzeug));
+        Fahrzeug fahrzeug = fahrzeuge.saveAndFlush(new Fahrzeug(request.kennzeichen(), request.modell(),
+                request.kategorie(), request.kmStand(), standort));
+        ereignisse.publishEvent(new FahrzeugbestandGeaendert(fahrzeug.getId()));
+        return FahrzeugResponse.von(fahrzeug);
     }
 
     @Transactional(readOnly = true)
@@ -67,7 +71,11 @@ public class FahrzeugService {
             throw new ConflictException("Standortwechsel nicht möglich: Das Fahrzeug hat offene Reservationen.");
         }
         fahrzeug.aendern(aenderung.kennzeichen(), aenderung.modell(), aenderung.kategorie(), standort);
-        return FahrzeugResponse.von(fahrzeuge.saveAndFlush(fahrzeug));
+        Fahrzeug gespeichert = fahrzeuge.saveAndFlush(fahrzeug);
+        if (standortwechsel) {
+            ereignisse.publishEvent(new FahrzeugbestandGeaendert(id));
+        }
+        return FahrzeugResponse.von(gespeichert);
     }
 
     public FahrzeugResponse ausserBetriebNehmen(Long id) {
@@ -76,7 +84,9 @@ public class FahrzeugService {
             throw new ConflictException("Ausserbetriebnahme nicht möglich: Das Fahrzeug hat offene Reservationen.");
         }
         fahrzeug.ausserBetriebNehmen();
-        return FahrzeugResponse.von(fahrzeuge.saveAndFlush(fahrzeug));
+        Fahrzeug gespeichert = fahrzeuge.saveAndFlush(fahrzeug);
+        ereignisse.publishEvent(new FahrzeugbestandGeaendert(id));
+        return FahrzeugResponse.von(gespeichert);
     }
 
     private boolean hatOffeneReservationen(Long fahrzeugId) {
