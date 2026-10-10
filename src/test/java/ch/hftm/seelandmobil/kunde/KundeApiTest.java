@@ -54,13 +54,15 @@ class KundeApiTest {
     @Test
     void ungueltigeEmailGibt400() throws Exception {
         postKunde("Nico Weber", "nico.weber")
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fehler.email").exists());
     }
 
     @Test
     void leererNameGibt400() throws Exception {
         postKunde(" ", "nico.weber@example.ch")
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fehler.name").value("darf nicht leer sein"));
     }
 
     @Test

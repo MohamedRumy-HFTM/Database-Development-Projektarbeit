@@ -76,7 +76,8 @@ class FahrzeugApiTest {
     @Test
     void ungueltigesKennzeichenGibt400() throws Exception {
         postFahrzeug("be-1003", standortId("Biel Bahnhof"))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fehler.kennzeichen").value("muss das Format 'BE 12345' haben"));
     }
 
     @Test

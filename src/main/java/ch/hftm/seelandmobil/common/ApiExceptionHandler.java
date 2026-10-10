@@ -2,17 +2,24 @@ package ch.hftm.seelandmobil.common;
 
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * Übersetzt Fehler in verständliche Antworten (RFC 9457 Problem Details).
- * Validierungsfehler (400) behandelt die Basisklasse.
+ * Bei ungültiger Eingabe (400) steht pro Feld die Fehlermeldung unter "fehler".
  */
 @RestControllerAdvice
 public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
@@ -28,6 +35,25 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
             new Regel(HttpStatus.CONFLICT, "Ein Kunde mit dieser E-Mail-Adresse existiert bereits."),
             "ex_reservation_ueberschneidung",
             new Regel(HttpStatus.CONFLICT, "Das Fahrzeug ist im gewünschten Zeitraum bereits reserviert."));
+
+    @Override
+    protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex,
+            HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+        Map<String, String> fehler = new TreeMap<>();
+        ex.getBindingResult().getFieldErrors()
+                .forEach(f -> fehler.putIfAbsent(f.getField(), f.getDefaultMessage()));
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Die Eingabe ist ungültig.");
+        problem.setProperty("fehler", fehler);
+        return handleExceptionInternal(ex, problem, headers, status, request);
+    }
+
+    @Override
+    protected ResponseEntity<Object> handleHttpMessageNotReadable(HttpMessageNotReadableException ex,
+            HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST,
+                "Der Request-Body ist kein gültiges JSON oder enthält einen unbekannten Wert.");
+        return handleExceptionInternal(ex, problem, headers, status, request);
+    }
 
     @ExceptionHandler(NotFoundException.class)
     ProblemDetail nichtGefunden(NotFoundException ex) {

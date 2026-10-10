@@ -1,6 +1,10 @@
 spring:
   application:
     name: seeland-mobil
+  web:
+    # Validierungsmeldungen auf Deutsch, unabhängig vom Browser
+    locale: de_CH
+    locale-resolver: fixed
   datasource:
     url: jdbc:postgresql://localhost:5432/seeland
     username: seeland
