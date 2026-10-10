@@ -1,0 +1,93 @@
+### Beispiel-Requests für den HTTP Client von IntelliJ.
+### Anwendung vorher starten; die Requests nacheinander ausführen.
+
+### Standorte
+GET http://localhost:8080/api/standorte
+
+### Fahrzeug erfassen
+POST http://localhost:8080/api/fahrzeuge
+Content-Type: application/json
+
+{
+  "kennzeichen": "BE 4711",
+  "modell": "VW Golf Variant",
+  "kategorie": "KOMBI",
+  "kmStand": 15000,
+  "standortId": 1
+}
+
+> {% client.global.set("fahrzeugId", response.body.id); %}
+
+### Fahrzeug lesen
+GET http://localhost:8080/api/fahrzeuge/{{fahrzeugId}}
+
+### Fahrzeug ändern (version = zuletzt gelesener Stand)
+PUT http://localhost:8080/api/fahrzeuge/{{fahrzeugId}}
+Content-Type: application/json
+
+{
+  "kennzeichen": "BE 4711",
+  "modell": "VW Golf Variant",
+  "kategorie": "KOMBI",
+  "standortId": 3,
+  "version": 0
+}
+
+### Gleiche Änderung nochmals → 409, weil version veraltet ist
+PUT http://localhost:8080/api/fahrzeuge/{{fahrzeugId}}
+Content-Type: application/json
+
+{
+  "kennzeichen": "BE 4711",
+  "modell": "VW Golf Variant",
+  "kategorie": "KOMBI",
+  "standortId": 3,
+  "version": 0
+}
+
+### Ungültiges Kennzeichen → 400
+POST http://localhost:8080/api/fahrzeuge
+Content-Type: application/json
+
+{
+  "kennzeichen": "be-4711",
+  "modell": "VW Golf",
+  "kategorie": "KOMBI",
+  "kmStand": 0,
+  "standortId": 1
+}
+
+### Fahrzeug ausser Betrieb nehmen
+POST http://localhost:8080/api/fahrzeuge/{{fahrzeugId}}/ausser-betrieb
+
+### Kunde erfassen
+POST http://localhost:8080/api/kunden
+Content-Type: application/json
+
+{
+  "name": "Lea Gerber",
+  "email": "lea.gerber@example.ch"
+}
+
+> {% client.global.set("kundeId", response.body.id); %}
+
+### Gleiche E-Mail in anderer Schreibweise → 409
+POST http://localhost:8080/api/kunden
+Content-Type: application/json
+
+{
+  "name": "Lea Gerber",
+  "email": "LEA.GERBER@example.ch"
+}
+
+### Kunde ändern
+PUT http://localhost:8080/api/kunden/{{kundeId}}
+Content-Type: application/json
+
+{
+  "name": "Lea Schneider",
+  "email": "lea.schneider@example.ch"
+}
+
+### Kunde sperren
+POST http://localhost:8080/api/kunden/{{kundeId}}/sperren
