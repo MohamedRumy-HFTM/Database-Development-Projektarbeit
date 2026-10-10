@@ -285,6 +285,7 @@ Weitere Fälle (400, 404, Filter, Grenzen) stehen in denselben Testklassen unter
 
 | Entscheidung | Begründung | Beleg |
 |---|---|---|
+| Schema in 3. Normalform | Jede Tabelle beschreibt ein Objekt, jedes Attribut hängt nur vom Schlüssel ab. `reservation.standort_id` ist keine Redundanz: Sie hält den Abholstandort zum Zeitpunkt der Buchung fest, der sich später nicht mehr aus dem Fahrzeug ableiten lässt. Einzige bewusste Redundanz ist `fahrzeug.km_stand` (nächste Zeile). | ER-Diagramm, Migrationen V1–V7 |
 | Überschneidungen verhindert die Datenbank (Exclusion-Constraint), nicht Java | Eine Prüfung «erst lesen, dann schreiben» sieht gleichzeitige, noch nicht committete Reservationen nicht. Der Constraint lässt die zweite Transaktion warten und lehnt sie nach dem COMMIT der ersten ab. | `ReservationNebenlaeufigkeitTest` |
 | Zeiträume halboffen `[beginn, ende)`, alle Zeitpunkte `TIMESTAMPTZ` | 10–14 und 14–16 überschneiden sich nicht. Zeitpunkte sind auch über den Sommerzeitwechsel eindeutig. | `ReservationApiTest.direktAnschliessenderZeitraumIstErlaubt` |
 | FAHRT als eigene Tabelle (1:0..1) | Rückgabedaten gibt es nur für abgeschlossene Reservationen: keine leeren Spalten, km-Regel als CHECK. A5 wird ein Vorgang über drei Tabellen. | `SchemaConstraintsTest.kmEndeKleinerAlsKmStartWirdAbgelehnt` |
