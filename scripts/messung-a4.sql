@@ -120,9 +120,6 @@ ROLLBACK;
 
 \echo
 \echo '== Mit Index (falls vorhanden) =='
-SELECT coalesce(pg_size_pretty(pg_relation_size(to_regclass('ix_reservation_kunde_beginn'))), 'kein Index')
-       AS indexgroesse \gset
-\echo 'Grösse ix_reservation_kunde_beginn:' :indexgroesse
 SELECT pg_temp.median_ms((SELECT sql FROM szenario WHERE nr = 1)) AS mit1,
        pg_temp.median_ms((SELECT sql FROM szenario WHERE nr = 2)) AS mit2,
        pg_temp.median_ms((SELECT sql FROM szenario WHERE nr = 3)) AS mit3,
@@ -133,14 +130,19 @@ SELECT 'EXPLAIN (ANALYZE, BUFFERS, COSTS OFF) ' || sql FROM szenario WHERE nr = 
 SELECT 'EXPLAIN (ANALYZE, BUFFERS, COSTS OFF) ' || sql FROM szenario WHERE nr = 3 \gexec
 
 -- Schreibkosten zuletzt: Auch zurückgerollte INSERTs verändern Tabellenseiten (Visibility Map)
--- und würden sonst die Lesemessungen danach verfälschen.
+-- und würden sonst die Lesemessungen davor verfälschen. Gemessen wird in einer Transaktion, die
+-- zurückgerollt wird, mit einem darin frisch erstellten Index: Der echte Index wächst so nicht
+-- durch die Messläufe, und die Grösse ist die eines frisch aufgebauten Index.
 \echo
-\echo '== Schreibkosten =='
+\echo '== Schreibkosten und Indexgrösse =='
 BEGIN;
 DROP INDEX IF EXISTS ix_reservation_kunde_beginn;
 SELECT pg_temp.einfuegen_ms(10000) AS ohne_insert \gset
-ROLLBACK;
+CREATE INDEX ix_reservation_kunde_beginn ON reservation (kunde_id, beginn DESC, id DESC);
+SELECT pg_size_pretty(pg_relation_size('ix_reservation_kunde_beginn')) AS indexgroesse \gset
 SELECT pg_temp.einfuegen_ms(10000) AS mit_insert \gset
+ROLLBACK;
+\echo 'Grösse ix_reservation_kunde_beginn (frisch aufgebaut):' :indexgroesse
 
 \echo
 \echo '== Ergebnis (Median aus 5 Läufen, ms) =='
