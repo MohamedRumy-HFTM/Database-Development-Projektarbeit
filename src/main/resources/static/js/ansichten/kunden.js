@@ -6,7 +6,7 @@ import { fehlerAnzeigen, h, knopfMitBestaetigung, meldung, meldungsbereich, seit
 export async function anzeigen(ziel) {
   const info = meldungsbereich();
   const liste = h('div', { class: 'rahmen' });
-  const suche = h('input', { type: 'search', placeholder: 'Name oder E-Mail', autocomplete: 'off' });
+  const suche = h('input', { type: 'search', placeholder: 'Name, E-Mail oder Nummer', autocomplete: 'off' });
   let seite = 0;
   let zeitgeber;
 
