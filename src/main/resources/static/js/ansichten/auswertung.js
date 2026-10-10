@@ -1,6 +1,6 @@
 // A7 Nutzung je Abholstandort und je Fahrzeug für einen Monat.
 
-import { alleStandorte, lesen } from '../api.js';
+import { alleStandorte, lesen, lesenMitServerzeit } from '../api.js';
 import { fehlerAnzeigen, ganzzahl, h, meldungsbereich, optionen, schild, zahl } from '../dom.js';
 
 const ANZAHL_KURZ = 15;
@@ -35,9 +35,8 @@ export async function anzeigen(ziel) {
 
   async function ladenStandorte() {
     try {
-      const t0 = performance.now();
-      const daten = await lesen('/api/auswertungen/standorte', zeitraum());
-      antwortzeit.textContent = `Antwort nach ${Math.round(performance.now() - t0)} ms`;
+      const { daten, serverMs } = await lesenMitServerzeit('/api/auswertungen/standorte', zeitraum());
+      antwortzeit.textContent = serverMs === null ? '' : `Server: ${zahl(serverMs, 2)} ms`;
       const meiste = Math.max(1, ...daten.map((d) => d.anzahlFahrten));
       standortListe.replaceChildren(h('table', {},
         h('thead', {}, h('tr', {}, h('th', {}, 'Abholstandort'), h('th', {}, 'Fahrten'),
@@ -100,8 +99,8 @@ export async function anzeigen(ziel) {
       h('h2', {}, 'Je Abholstandort'),
       h('p', {}, antwortzeit, ' ',
         h('button', { class: 'knopf knopf-leise knopf-klein', type: 'button', onclick: ladenStandorte }, 'Erneut abfragen'))),
-    h('p', { class: 'klein' }, 'Diese Auswertung wird pro Monat zwischengespeichert. Eine erneute Abfrage kommt ohne Datenbankzugriff, '
-      + 'bis eine Fahrt abgeschlossen wird.'),
+    h('p', { class: 'klein' }, 'Diese Auswertung wird pro Monat zwischengespeichert. Die erste Abfrage eines Monats liest aus der '
+      + 'Datenbank, jede weitere kommt aus dem Cache (Server meist unter 1 ms), bis eine Fahrt abgeschlossen wird.'),
     standortListe,
     h('div', { class: 'abschnitt-kopf' },
       h('h2', {}, 'Je Fahrzeug'),

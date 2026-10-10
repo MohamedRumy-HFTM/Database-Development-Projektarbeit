@@ -19,7 +19,7 @@ function mitParametern(pfad, parameter = {}) {
   return text ? `${pfad}?${text}` : pfad;
 }
 
-async function anfrage(methode, pfad, body) {
+async function anfrage(methode, pfad, body, mitKopf = false) {
   const antwort = await fetch(pfad, {
     method: methode,
     headers: body === undefined ? {} : { 'Content-Type': 'application/json' },
@@ -30,12 +30,19 @@ async function anfrage(methode, pfad, body) {
   if (!antwort.ok) {
     throw new ApiFehler(antwort.status, daten);
   }
-  return daten;
+  return mitKopf ? { daten, kopf: antwort.headers } : daten;
 }
 
 export const lesen = (pfad, parameter) => anfrage('GET', mitParametern(pfad, parameter));
 export const senden = (pfad, body) => anfrage('POST', pfad, body);
 export const ersetzen = (pfad, body) => anfrage('PUT', pfad, body);
+
+/** Wie lesen, liefert zusätzlich die Zeit im Server aus dem Header Server-Timing (ms, sonst null). */
+export async function lesenMitServerzeit(pfad, parameter) {
+  const { daten, kopf } = await anfrage('GET', mitParametern(pfad, parameter), undefined, true);
+  const dauer = /dur=([\d.]+)/.exec(kopf.get('Server-Timing') ?? '');
+  return { daten, serverMs: dauer ? Number(dauer[1]) : null };
+}
 
 let standorte;
 
