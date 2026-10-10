@@ -152,6 +152,25 @@ Content-Type: application/json
 ### A3 – Reservation lesen
 GET http://localhost:8080/api/reservationen/{{reservationId}}
 
+### A4 – Reservationen des Kunden, neueste zuerst (Standard: 20 pro Seite)
+GET http://localhost:8080/api/kunden/{{kundeId}}/reservationen
+
+### A4 – Nur aktive, 1 pro Seite, zweite Seite (seite beginnt bei 0)
+GET http://localhost:8080/api/kunden/{{kundeId}}/reservationen?status=AKTIV&seite=1&groesse=1
+
+### A4 – Mehr als 100 pro Seite → 400
+GET http://localhost:8080/api/kunden/{{kundeId}}/reservationen?groesse=101
+
+# Zeiten in der URL in UTC (Z): Ein "+" müsste als %2B geschrieben werden.
+### A6 – Verfügbare Fahrzeuge in Lyss am 1.9.2027, 13–15 Uhr: BE 4711 ist reserviert und fehlt
+GET http://localhost:8080/api/fahrzeuge/verfuegbar?von=2027-09-01T11:00:00Z&bis=2027-09-01T13:00:00Z&standortId=3
+
+### A6 – Gleicher Tag, 17–18 Uhr: BE 4711 ist frei
+GET http://localhost:8080/api/fahrzeuge/verfuegbar?von=2027-09-01T15:00:00Z&bis=2027-09-01T16:00:00Z&standortId=3
+
+### A6 – Nur Kombis, alle Standorte, 5 pro Seite
+GET http://localhost:8080/api/fahrzeuge/verfuegbar?von=2027-09-01T15:00:00Z&bis=2027-09-01T16:00:00Z&kategorie=KOMBI&groesse=5
+
 ### A5 – Fahrt abschliessen, Reservation hat noch nicht begonnen → 409
 POST http://localhost:8080/api/reservationen/{{reservationId}}/abschliessen
 Content-Type: application/json
