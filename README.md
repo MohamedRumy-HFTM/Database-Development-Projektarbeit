@@ -32,6 +32,20 @@ Projektsteckbrief: [aktualisierte Fassung](docs/projektsteckbrief.pdf) (Stand de
 
 Abgrenzung: Standorte fest vorgegeben, keine Anmeldung, keine Tarife oder Zahlung.
 
+## Abweichungen vom eingereichten Steckbrief
+
+Die [aktualisierte Fassung](docs/projektsteckbrief.pdf) des Steckbriefs beschreibt den abgegebenen Stand. Gegenüber der
+[eingereichten Fassung vom 07.10.2026](docs/projektsteckbrief-eingereicht.pdf) hat sich Folgendes geändert:
+
+| Bereich | Eingereicht | Umgesetzt | Grund |
+|---|---|---|---|
+| A7 Zuordnung | pro Standort | nach Abholstandort der Reservation (Migration V7) | Verschobene Fahrzeuge verfälschen sonst frühere Monate; in den Testdaten wären 16 Fahrten von Biel nach Ins gewandert |
+| A7 Standort-Auslastung | Anzahl Fahrzeuge × Stunden | Fahrzeuge in Betrieb, die dem Standort heute zugeordnet sind | Nenner eindeutig festgelegt; das Modell kennt keine Bestandshistorie |
+| A1 Standortwechsel | Regel nur für die Ausserbetriebnahme | auch Standortwechsel nur ohne offene Reservationen | Sonst stimmte der Abholstandort offener Reservationen nicht mehr mit dem Fahrzeug überein |
+| Cache | nach jedem Fahrtabschluss geleert | zusätzlich nach Änderungen am Fahrzeugbestand | Folge der Standort-Auslastung |
+| Abgrenzung | kein Frontend, Demo über Swagger UI | Swagger UI und zusätzlich eine Oberfläche | Prüfung ohne Werkzeuge; die Oberfläche enthält keine eigene Logik |
+| Prüfungen | – | ergänzt: Ende ≤ Beginn (A3), Filter in der Datenbank (A4), zweiter Abschluss (A5) | Genauere Nachweise |
+
 ## Voraussetzungen
 
 | Was | Version | Hinweis |
