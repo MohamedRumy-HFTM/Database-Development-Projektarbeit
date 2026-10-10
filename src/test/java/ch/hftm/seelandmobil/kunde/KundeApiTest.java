@@ -100,6 +100,31 @@ class KundeApiTest {
                 .andExpect(jsonPath("$.gesperrt").value(true));
     }
 
+    @Test
+    void sucheInNameUndEmailOhneGrossKleinschreibung() throws Exception {
+        erfassen("Lea Gerber", "lea.gerber@example.ch");
+        erfassen("Nico Weber", "nico.weber@example.ch");
+
+        mvc.perform(get("/api/kunden").param("suche", "GERBER"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.anzahlGesamt").value(1))
+                .andExpect(jsonPath("$.inhalt[0].name").value("Lea Gerber"));
+        mvc.perform(get("/api/kunden").param("suche", "weber@"))
+                .andExpect(jsonPath("$.anzahlGesamt").value(1))
+                .andExpect(jsonPath("$.inhalt[0].name").value("Nico Weber"));
+    }
+
+    @Test
+    void platzhalterInDerSucheGeltenWoertlich() throws Exception {
+        erfassen("Lea Gerber", "lea.gerber@example.ch");
+
+        mvc.perform(get("/api/kunden").param("suche", "%"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.anzahlGesamt").value(0));
+        mvc.perform(get("/api/kunden").param("suche", "lea_gerber"))
+                .andExpect(jsonPath("$.anzahlGesamt").value(0));
+    }
+
     private long erfassen(String name, String email) throws Exception {
         String antwort = postKunde(name, email)
                 .andExpect(status().isCreated())
