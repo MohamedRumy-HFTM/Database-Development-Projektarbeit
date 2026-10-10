@@ -2,11 +2,15 @@ package ch.hftm.seelandmobil.reservation;
 
 import ch.hftm.seelandmobil.common.ConflictException;
 import ch.hftm.seelandmobil.common.NotFoundException;
+import ch.hftm.seelandmobil.common.Seite;
 import ch.hftm.seelandmobil.common.UngueltigeAnfrageException;
 import ch.hftm.seelandmobil.fahrzeug.Fahrzeug;
 import ch.hftm.seelandmobil.fahrzeug.FahrzeugRepository;
 import ch.hftm.seelandmobil.kunde.Kunde;
 import ch.hftm.seelandmobil.kunde.KundeRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -66,6 +70,22 @@ public class ReservationService {
         }
         reservation.stornieren();
         return ReservationResponse.von(reservationen.saveAndFlush(reservation));
+    }
+
+    /**
+     * A4: Filter, Sortierung und Seitenbegrenzung laufen in der Datenbank. Ob der Kunde existiert,
+     * wird nur bei leerer Seite geprüft – im Normalfall bleibt es bei Abfrage + Count.
+     */
+    @Transactional(readOnly = true)
+    public Seite<ReservationResponse> vonKunde(Long kundeId, ReservationStatus status, int seite, int groesse) {
+        Pageable pageable = PageRequest.of(seite, groesse);
+        Page<Reservation> treffer = status == null
+                ? reservationen.findeVonKunde(kundeId, pageable)
+                : reservationen.findeVonKundeMitStatus(kundeId, status, pageable);
+        if (treffer.isEmpty() && !kunden.existsById(kundeId)) {
+            throw new NotFoundException("Kunde " + kundeId + " existiert nicht.");
+        }
+        return Seite.von(treffer.map(ReservationResponse::von));
     }
 
     @Transactional(readOnly = true)
