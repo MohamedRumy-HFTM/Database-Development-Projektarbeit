@@ -127,10 +127,12 @@ class SchemaConstraintsTest {
 
     private Long reservation(String beginn, String ende, String status) {
         return jdbc.queryForObject("""
-                INSERT INTO reservation (kunde_id, fahrzeug_id, beginn, ende, status)
-                VALUES (?, ?, ?::timestamptz, ?::timestamptz, ?)
+                INSERT INTO reservation (kunde_id, fahrzeug_id, standort_id, beginn, ende, status)
+                SELECT ?, id, standort_id, ?::timestamptz, ?::timestamptz, ?
+                FROM fahrzeug
+                WHERE id = ?
                 RETURNING id
-                """, Long.class, kundeId, fahrzeugId, beginn, ende, status);
+                """, Long.class, kundeId, beginn, ende, status, fahrzeugId);
     }
 
     private void fahrt(Long reservationId, int kmStart, int kmEnde) {
