@@ -76,7 +76,9 @@ class NutzungApiTest {
                 .andExpect(header().string("Server-Timing", matchesPattern("auswertung;dur=\\d+\\.\\d{2}")))
                 .andExpect(jsonPath("$.length()").value(8))
                 .andExpect(jsonPath("$[0].standortName").value("Nidau"))
+                .andExpect(jsonPath("$[0].anzahlFahrzeuge").value(1))
                 .andExpect(jsonPath("$[0].anzahlFahrten").value(1))
+                .andExpect(jsonPath("$[0].auslastungProzent").value(1.0))
                 .andExpect(jsonPath("$[0].nutzungsstunden").value(7.43))
                 .andExpect(jsonPath("$[0].km").value(150));
     }

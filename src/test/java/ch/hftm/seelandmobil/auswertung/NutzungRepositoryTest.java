@@ -79,7 +79,7 @@ class NutzungRepositoryTest {
 
     @Test
     void jeStandortExakteSummen() {
-        Map<String, StandortNutzung> ergebnis = nachName(repository.jeStandort(VON, BIS), StandortNutzung::standortName);
+        Map<String, StandortNutzung> ergebnis = nachName(repository.jeStandort(VON, BIS, STUNDEN_IM_MAERZ), StandortNutzung::standortName);
 
         StandortNutzung aarbergNutzung = ergebnis.get("Aarberg");
         assertThat(aarbergNutzung.anzahlFahrten()).isEqualTo(5);
@@ -89,7 +89,7 @@ class NutzungRepositoryTest {
 
     @Test
     void standorteOhneFahrtErscheinenMitNull() {
-        List<StandortNutzung> ergebnis = repository.jeStandort(VON, BIS);
+        List<StandortNutzung> ergebnis = repository.jeStandort(VON, BIS, STUNDEN_IM_MAERZ);
 
         assertThat(ergebnis).hasSize(8);
         StandortNutzung insNutzung = nachName(ergebnis, StandortNutzung::standortName).get("Ins");
@@ -97,6 +97,33 @@ class NutzungRepositoryTest {
         assertThat(insNutzung.nutzungsstunden()).isEqualByComparingTo("0");
         assertThat(insNutzung.km()).isZero();
         assertThat(ergebnis.get(0).standortName()).as("meiste Fahrten zuerst").isEqualTo("Aarberg");
+    }
+
+    /**
+     * Aarberg: 12.5 h ÷ (2 Fahrzeuge × 744 h) = 0.84 %. Die Fahrt von BE 9104 zählt beim
+     * Abholstandort Aarberg, das Fahrzeug selbst steht heute in Ins. Fahrzeuge ausser Betrieb
+     * zählen nicht, Standorte ohne Fahrzeug haben keine Auslastung.
+     */
+    @Test
+    void jeStandortMitFahrzeugbestandUndAuslastung() {
+        jdbc.update("""
+                insert into fahrzeug (kennzeichen, modell, kategorie, standort_id, in_betrieb)
+                values ('BE 9105', 'Hyundai i20', 'KLEIN', ?, false)
+                """, ins);
+
+        Map<String, StandortNutzung> ergebnis = nachName(
+                repository.jeStandort(VON, BIS, STUNDEN_IM_MAERZ), StandortNutzung::standortName);
+
+        StandortNutzung aarbergNutzung = ergebnis.get("Aarberg");
+        assertThat(aarbergNutzung.anzahlFahrzeuge()).isEqualTo(2);
+        assertThat(aarbergNutzung.anzahlFahrten()).as("Bestand vervielfacht die Fahrten nicht").isEqualTo(5);
+        assertThat(aarbergNutzung.auslastungProzent()).isEqualByComparingTo("0.84");
+        StandortNutzung insNutzung = ergebnis.get("Ins");
+        assertThat(insNutzung.anzahlFahrzeuge()).as("BE 9105 ist ausser Betrieb").isEqualTo(2);
+        assertThat(insNutzung.auslastungProzent()).isEqualByComparingTo("0");
+        StandortNutzung nidauNutzung = ergebnis.get("Nidau");
+        assertThat(nidauNutzung.anzahlFahrzeuge()).isZero();
+        assertThat(nidauNutzung.auslastungProzent()).isNull();
     }
 
     @Test

@@ -17,21 +17,35 @@ import java.util.List;
  * Der Zeitfilter steht in der ON-Bedingung des LEFT JOIN, nicht im WHERE – sonst fielen
  * Standorte und Fahrzeuge ohne Fahrt aus dem Ergebnis. Gezählt wird
  * COUNT(v.reservation_id), denn COUNT(*) ergäbe für die NULL-Zeile des LEFT JOIN 1 statt 0.
+ * <p>
+ * Den Fahrzeugbestand je Standort zählt ein eigener Teil (WITH bestand) vorab. Ein direkter
+ * JOIN auf fahrzeug würde jede Fahrt einmal pro Fahrzeug des Standorts wiederholen und Fahrten,
+ * Stunden und Kilometer vervielfachen.
  */
 @Repository
 public class NutzungRepository {
 
     private static final String JE_STANDORT = """
+            WITH bestand AS (
+                SELECT standort_id, COUNT(*) AS anzahl_fahrzeuge
+                FROM fahrzeug
+                WHERE in_betrieb
+                GROUP BY standort_id
+            )
             SELECT s.id                                  AS standort_id,
                    s.name                                AS standort_name,
+                   COALESCE(b.anzahl_fahrzeuge, 0)       AS anzahl_fahrzeuge,
                    COUNT(v.reservation_id)               AS anzahl_fahrten,
                    ROUND(COALESCE(SUM(v.nutzung_h), 0), 2) AS nutzungsstunden,
-                   COALESCE(SUM(v.km), 0)                AS km
+                   COALESCE(SUM(v.km), 0)                AS km,
+                   ROUND(100 * COALESCE(SUM(v.nutzung_h), 0)
+                         / NULLIF(COALESCE(b.anzahl_fahrzeuge, 0) * :stundenImZeitraum, 0), 2) AS auslastung_prozent
             FROM standort s
+            LEFT JOIN bestand b ON b.standort_id = s.id
             LEFT JOIN v_fahrt_nutzung v
                    ON v.standort_id = s.id
                   AND v.beginn >= :von AND v.beginn < :bis
-            GROUP BY s.id, s.name
+            GROUP BY s.id, s.name, b.anzahl_fahrzeuge
             ORDER BY anzahl_fahrten DESC, nutzungsstunden DESC, s.name
             """;
 
@@ -59,16 +73,20 @@ public class NutzungRepository {
         this.jdbc = jdbc;
     }
 
-    public List<StandortNutzung> jeStandort(OffsetDateTime von, OffsetDateTime bis) {
+    /** Fahrzeugbestand = Fahrzeuge in Betrieb, die heute dem Standort zugeordnet sind. */
+    public List<StandortNutzung> jeStandort(OffsetDateTime von, OffsetDateTime bis, BigDecimal stundenImZeitraum) {
         MapSqlParameterSource parameter = new MapSqlParameterSource()
                 .addValue("von", von)
-                .addValue("bis", bis);
+                .addValue("bis", bis)
+                .addValue("stundenImZeitraum", stundenImZeitraum);
         return jdbc.query(JE_STANDORT, parameter, (rs, zeile) -> new StandortNutzung(
                 rs.getLong("standort_id"),
                 rs.getString("standort_name"),
+                rs.getLong("anzahl_fahrzeuge"),
                 rs.getLong("anzahl_fahrten"),
                 rs.getBigDecimal("nutzungsstunden"),
-                rs.getLong("km")));
+                rs.getLong("km"),
+                rs.getBigDecimal("auslastung_prozent")));
     }
 
     /** standortId optional: aktueller Standort des Fahrzeugs (für die Flottenplanung). */

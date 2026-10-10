@@ -95,7 +95,7 @@ class NutzungCacheTest {
         assertThat(fahrtenBueren()).isEqualTo(1);
         assertThat(fahrtenBueren()).isEqualTo(1);
 
-        verify(repository, times(1)).jeStandort(any(), any());
+        verify(repository, times(1)).jeStandort(any(), any(), any());
     }
 
     @Test
@@ -105,7 +105,7 @@ class NutzungCacheTest {
         fahrtService.abschliessen(laufendeReservation, new FahrtAbschluss(5120, jetzt.minusMinutes(5)));
 
         assertThat(fahrtenBueren()).isEqualTo(2);
-        verify(repository, times(2)).jeStandort(any(), any());
+        verify(repository, times(2)).jeStandort(any(), any(), any());
     }
 
     /**
@@ -133,7 +133,7 @@ class NutzungCacheTest {
                 .isInstanceOf(DataIntegrityViolationException.class);
 
         assertThat(fahrtenBueren()).isEqualTo(1);
-        verify(repository, times(1)).jeStandort(any(), any());
+        verify(repository, times(1)).jeStandort(any(), any(), any());
     }
 
     @Test
@@ -141,15 +141,18 @@ class NutzungCacheTest {
         service.jeStandort(von, bis);
         service.jeStandort(von.withOffsetSameInstant(ZoneOffset.UTC), bis.withOffsetSameInstant(ZoneOffset.UTC));
 
-        verify(repository, times(1)).jeStandort(any(), any());
+        verify(repository, times(1)).jeStandort(any(), any(), any());
     }
 
     private long fahrtenBueren() {
+        return standortBueren().anzahlFahrten();
+    }
+
+    private StandortNutzung standortBueren() {
         return service.jeStandort(von, bis).stream()
                 .filter(nutzung -> nutzung.standortName().equals("Büren a.A."))
                 .findFirst()
-                .orElseThrow()
-                .anzahlFahrten();
+                .orElseThrow();
     }
 
     private long reservation(long standortId, OffsetDateTime beginn, OffsetDateTime ende, String status) {
