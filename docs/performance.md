@@ -37,6 +37,15 @@ order by r1_0.beginn desc, r1_0.id desc
 fetch first ? rows only
 ```
 
+| Parameter | Wert |
+|---|---|
+| Vielfahrer | Kunde 1, 2'314 Reservationen |
+| Typischer Kunde | Kunde 1579, 4 Reservationen (Median, kleinste ID) |
+| Seitengrösse | 20 (Standard von A4) |
+| Seiten | Seite 1 (`fetch first 20 rows only`) und Seite 3 (`offset 40 rows`) |
+| Count | `count(r1_0.id)` für die Gesamtzahl der Seiten |
+| Ausgangszustand | Testdaten frisch geladen, `VACUUM ANALYZE`, Schema V9; «ohne Index» entfernt V9 in einer zurückgerollten Transaktion |
+
 Bis V8 gibt es auf `reservation` nur den Primärschlüssel und den GiST-Index des Exclusion-Constraints, keinen Index auf `kunde_id`. V9 legt ihn an:
 
 ```sql
@@ -130,7 +139,7 @@ Die JPQL-Abfrage nutzt den GiST-Index des Exclusion-Constraints, aber nur für `
 
 ## A7 Cache
 
-Standortauswertung September 2026 über die REST-API: erster Aufruf 85 ms, zweiter Aufruf 5.5 ms aus dem Cache (ohne Datenbankzugriff). Nach jedem Fahrtabschluss wird der Cache geleert, erst nach dem COMMIT (`NutzungCacheTest`).
+Standortauswertung September 2026 über die REST-API: erster Aufruf 85 ms, zweiter Aufruf 5.5 ms aus dem Cache (ohne Datenbankzugriff). Im Server allein (Header `Server-Timing`) rund 20 ms beim ersten Aufruf und 0.25 ms bei einem Treffer. Nach jedem Fahrtabschluss und jeder Änderung des Fahrzeugbestands eines Standorts wird der Cache geleert, erst nach dem COMMIT (`NutzungCacheTest`). Diese Messung betrifft den Anwendungscache; die Messung der Datenbankabfrage (T10) läuft getrennt davon direkt in PostgreSQL.
 
 ## Reproduzieren
 
