@@ -54,3 +54,4 @@ Jeder Lauf ersetzt die bestehenden Daten und erzeugt exakt dieselben Datensätze
 | V6 | Vorgegebene Standorte |
 | V7 | Abholstandort in `reservation`; bestehende Reservationen übernehmen den Standort ihres Fahrzeugs |
 | V8 | View `v_fahrt_nutzung` mit allen abgeschlossenen Fahrten |
+| V9 | Index `ix_reservation_kunde_beginn` für die Reservationsliste eines Kunden (A4), siehe `docs/performance.md` |
