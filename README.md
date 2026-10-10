@@ -1,53 +1,243 @@
 # Seeland Mobil
 
 Carsharing-Verwaltung für einen regionalen Anbieter im Seeland: Fahrzeuge, Kunden, Reservationen,
-Fahrtabschluss und Nutzungsauswertung als REST-API mit Spring Boot und PostgreSQL.
+Fahrtabschluss und Nutzungsauswertung. REST-API mit Spring Boot und PostgreSQL, dazu eine Oberfläche im Browser.
 Projektarbeit Database Development, HFTM.
 
-## Schnellstart
+## Für die Bewertung
 
-Voraussetzungen: Java 21 und Docker.
+| Schritt | Was | Abschnitt |
+|---|---|---|
+| 1 | Voraussetzungen prüfen | [Voraussetzungen](#voraussetzungen) |
+| 2 | Datenbank und Anwendung starten | [Starten](#starten) |
+| 3 | Testdaten laden (unter einer Minute) | [Testdaten](#testdaten) |
+| 4 | Fachfunktionen in der Oberfläche durchspielen | [Prüfanleitung](#prüfanleitung) |
+| 5 | Automatisierte Tests ausführen (93 Tests) | [Tests](#tests) |
+| 6 | Nachweise je Kriterium des Bewertungsrasters | [Nachweise je Kriterium](#nachweise-je-kriterium) |
 
-Datenbank starten:
+## Fachliche Anforderungen
+
+| Nr | Anforderung |
+|---|---|
+| A1 | Fahrzeuge verwalten: eindeutiges Kennzeichen; Standortwechsel und Ausserbetriebnahme nur ohne offene Reservationen; Änderungen mit veraltetem Stand werden abgelehnt |
+| A2 | Kunden verwalten: E-Mail eindeutig, unabhängig von Gross- und Kleinschreibung; gesperrte Kunden können nicht reservieren |
+| A3 | Reservieren und stornieren: Zeiträume desselben Fahrzeugs überschneiden sich nie, auch bei gleichzeitigen Anfragen; Storno nur vor Beginn |
+| A4 | Reservationen eines Kunden: nach Status filtern, neueste zuerst, seitenweise |
+| A5 | Fahrt abschliessen: Fahrt anlegen, Reservation abschliessen, km-Stand nachführen, vollständig oder gar nicht |
+| A6 | Freie Fahrzeuge für einen Zeitraum suchen, optional nach Standort und Kategorie |
+| A7 | Nutzung je Abholstandort und je Fahrzeug: Fahrten, Nutzungsstunden, Kilometer, Auslastung |
+
+Abgrenzung: Standorte fest vorgegeben, keine Anmeldung, keine Tarife oder Zahlung.
+
+## Voraussetzungen
+
+| Was | Version | Hinweis |
+|---|---|---|
+| JDK | 21 | `java -version` |
+| Docker Desktop | gestartet | Datenbank (`compose.yaml`) und Integrationstests (Testcontainers) |
+| IntelliJ IDEA oder Maven | Maven 3.9 oder neuer | IntelliJ bringt Maven mit; das Repository enthält keinen Maven Wrapper |
+| Browser | aktuelles Chrome, Edge, Firefox oder Safari | |
+| Freie Ports | 5432 und 8080 | Läuft lokal bereits ein PostgreSQL auf 5432, dieses vorher beenden |
+
+Internet braucht es nur beim ersten Start (Maven-Abhängigkeiten, Image `postgres:16-alpine`).
+
+## Starten
 
 ```bash
-docker compose up -d
+docker compose up -d      # PostgreSQL 16 auf localhost:5432, Datenbank, Benutzer und Passwort: seeland
+mvn spring-boot:run       # oder in IntelliJ SeelandMobilApplication starten
 ```
 
-Anwendung starten: in IntelliJ `SeelandMobilApplication` oder `mvn spring-boot:run`.
-Beim Start baut Flyway das Schema auf (`src/main/resources/db/migration`). Danach:
+In IntelliJ: Projektordner öffnen (wird als Maven-Projekt erkannt), als SDK Java 21 wählen,
+`src/main/java/ch/hftm/seelandmobil/SeelandMobilApplication.java` ausführen.
+Beim Start baut Flyway das Schema auf (V1–V9, `src/main/resources/db/migration`). Danach:
 
 | Adresse | Inhalt |
 |---|---|
-| `http://localhost:8080` | Oberfläche für die Disposition |
-| `http://localhost:8080/swagger-ui.html` | Swagger UI mit allen Endpoints |
+| http://localhost:8080 | Oberfläche |
+| http://localhost:8080/swagger-ui.html | Swagger UI: alle Endpunkte, ausführbar mit «Try it out» |
+| http://localhost:8080/v3/api-docs | OpenAPI-Beschreibung |
 | `http://localhost:8080/api/…` | REST-API |
 
-Tests: in IntelliJ Rechtsklick auf `src/test/java` → *Run 'All Tests'* oder `mvn test`.
-Die Tests starten mit Testcontainers ein eigenes PostgreSQL 16; Docker muss laufen.
-
-API ausprobieren: in der Oberfläche, in Swagger UI oder mit `http/requests.http` im HTTP Client von IntelliJ
-(von oben nach unten, frische Datenbank). Gleichzeitige Reservationen live zeigen: in der Oberfläche unter
-*Buchen → Gleichzeitig buchen* oder im Terminal:
-
-```bash
-scripts/demo-konflikt.sh <fahrzeugId> <kundeIdA> <kundeIdB>
-```
-
-Eine Antwort ist 201, die andere 409.
+Ohne Testdaten enthält die Datenbank nur die 8 Standorte aus V6. Beenden: Anwendung stoppen und
+`docker compose down` (Daten bleiben erhalten) oder `docker compose down -v` (Datenbank löschen).
 
 ## Testdaten
 
-Nachdem das Schema aufgebaut ist (Anwendung einmal gestartet):
+Nachdem die Anwendung einmal gestartet wurde (Schema vorhanden):
 
 ```bash
 docker compose exec -T db psql -U seeland -d seeland -v ON_ERROR_STOP=1 < scripts/testdaten.sql
 ```
 
-Erzeugt 8 Standorte, 240 Fahrzeuge, 20'000 fiktive Kunden, 121'880 Reservationen (Oktober 2024 bis
-Anfang 2027, Stichtag 1.10.2026) und rund 92'000 Fahrten. Jeder Lauf ersetzt die bestehenden Daten und
-erzeugt exakt dieselben Datensätze. Danach die Anwendung neu starten, damit der Cache der
-Standortauswertung keine Werte von vorher enthält.
+In Windows PowerShell (kennt `<` nicht):
+
+```powershell
+docker compose cp scripts/testdaten.sql db:/tmp/testdaten.sql
+docker compose exec db psql -U seeland -d seeland -v ON_ERROR_STOP=1 -f /tmp/testdaten.sql
+```
+
+Danach die Anwendung neu starten, damit der Cache der Standortauswertung keine Werte von vorher enthält.
+Jeder Lauf ersetzt alle Daten ausser den Standorten und erzeugt exakt dieselben Datensätze mit denselben IDs.
+Damit lässt sich der Ausgangszustand nach der Prüfung jederzeit wiederherstellen.
+
+| Daten | Umfang |
+|---|---|
+| Standorte | 8: Biel Bahnhof, Biel Bözingen, Lyss Zentrum, Nidau, Pieterlen, Aarberg, Ins, Büren a.A. |
+| Fahrzeuge | 240, `BE 100001` bis `BE 100240` |
+| Kunden | 20'000 fiktive, «Kunde 00001» bis «Kunde 20000», `kunde00001@example.test` usw.; jeder 97. ist gesperrt |
+| Reservationen | 121'880 von Oktober 2024 bis März 2027. Stichtag 1.10.2026: davor abgeschlossen (85 %) oder storniert, danach offen (aktiv) oder storniert |
+| Fahrten | 91'799, eine je abgeschlossene Reservation |
+
+Kunden mit Besonderheiten:
+
+| Kunde | Besonderheit |
+|---|---|
+| Kunde 00001 | 2'314 Reservationen: Blättern und Filtern |
+| Kunde 00097 | gesperrt |
+| Kunde 11459 | eine laufende Reservation: `BE 100064`, Biel Bahnhof, ab 6.10.2026 (ID 108809) |
+| Kunde 11474, Kunde 16729 | je eine laufende Reservation (ID 108854 und 108214) für weitere Durchläufe |
+
+## Oberfläche
+
+Laut Projektsteckbrief genügt die API; die Oberfläche ist eine freiwillige Ergänzung, damit sich alle
+Fachfunktionen ohne Werkzeuge prüfen lassen. Sie enthält keine eigenen Geschäftsregeln: Jede Aktion ist ein Aufruf
+der REST-API, und Fehler zeigt sie so an, wie die API sie liefert, mit HTTP-Status und Meldung.
+
+```mermaid
+flowchart LR
+    subgraph Browser
+        UI["Oberfläche<br/>HTML, CSS, JavaScript"]
+        SW["Swagger UI"]
+    end
+    subgraph App["Spring Boot, localhost:8080"]
+        ST["Statische Dateien<br/>src/main/resources/static"]
+        API["REST-API /api<br/>Controller → Service → Repository"]
+    end
+    DB[("PostgreSQL 16<br/>Constraints, View, Index")]
+    UI -. "lädt index.html, css, js" .-> ST
+    UI -- "fetch /api, JSON" --> API
+    SW -- "HTTP" --> API
+    API -- "JPA, JPQL, JDBC" --> DB
+```
+
+| Aspekt | Umsetzung |
+|---|---|
+| Auslieferung | Spring Boot liefert `src/main/resources/static` auf demselben Port wie die API aus. Kein Framework, kein npm, kein Build |
+| Navigation | `js/app.js` wählt die Ansicht anhand der Adresse (`#/buchen`, `#/reservationen?kunde=11459` usw.) und lädt das Modul aus `js/ansichten/` |
+| Datenzugriff | `js/api.js` ruft `/api/…` mit `fetch` auf; Antworten 4xx und 5xx werden zu Fehlern mit Status und Problem Details |
+| Anzeige | `js/dom.js` baut die Elemente; Texte aus der Datenbank werden immer als Text eingefügt, nie als HTML |
+| Kundenwahl | `js/kundenwahl.js` sucht über `GET /api/kunden?suche=` in Name und E-Mail; ein leeres Feld zeigt die ersten Kunden |
+| Bestätigung | «Stornieren», «Sperren» und «Ausser Betrieb nehmen» führen erst beim zweiten Klick aus («Wirklich …?») |
+| Schrift | Barlow liegt lokal unter `static/fonts` (SIL Open Font License 1.1), die Oberfläche braucht kein Internet |
+
+| Bereich | Adresse | Inhalt | Aufrufe | Anf. |
+|---|---|---|---|---|
+| Buchen | `#/buchen` | Freie Fahrzeuge suchen und reservieren; «Gleichzeitig buchen» schickt zwei überlappende Anfragen gleichzeitig | `GET /api/fahrzeuge/verfuegbar`, `POST /api/reservationen` | A6, A3 |
+| Reservationen | `#/reservationen` | Reservationen eines Kunden nach Status und seitenweise; Storno vor Beginn, Fahrtabschluss ab Beginn | `GET /api/kunden/{id}/reservationen`, `POST …/stornieren`, `POST …/abschliessen` | A4, A3, A5 |
+| Fahrzeuge | `#/fahrzeuge` | Liste je Standort; erfassen, ändern (mit Version), ausser Betrieb nehmen | `GET` und `POST /api/fahrzeuge`, `PUT /api/fahrzeuge/{id}`, `POST …/ausser-betrieb` | A1 |
+| Kunden | `#/kunden` | Suchen, erfassen, ändern, sperren | `GET` und `POST /api/kunden`, `PUT /api/kunden/{id}`, `POST …/sperren` | A2 |
+| Nutzung | `#/auswertung` | Monat je Abholstandort und je Fahrzeug; die Serverzeit aus dem Header `Server-Timing` zeigt Cache-Treffer | `GET /api/auswertungen/standorte`, `GET /api/auswertungen/fahrzeuge` | A7 |
+
+«Gleichzeitig buchen» (Prüfanleitung Schritt 15): Beide Anfragen sehen das Fahrzeug als frei, der Exclusion-Constraint
+lässt nur eine zu.
+
+![Zwei gleichzeitige Reservationen: eine 201, die andere 409](docs/gleichzeitig-buchen.png)
+
+## Prüfanleitung
+
+Ausgangslage: Testdaten frisch geladen, Anwendung neu gestartet, http://localhost:8080 offen.
+Die Schritte bauen aufeinander auf. «Morgen» ist der Tag nach der Prüfung; Buchen füllt morgen 10:00–14:00 vor.
+
+| Nr | Vorgehen | Erwartet | Anf. |
+|---|---|---|---|
+| | **Fahrzeuge** | | |
+| 1 | «Fahrzeug erfassen»: `BE 9901`, `Ford Transit`, Transporter, km-Stand 1000, Pieterlen | «Erfasst: BE 9901, Ford Transit in Pieterlen.» | A1 |
+| 2 | Nochmals erfassen mit Kennzeichen `BE 100001` | **409** Kennzeichen existiert bereits | A1 |
+| 3 | Kennzeichen `BE-9901` | **400** mit Feldfehler `kennzeichen` | A1 |
+| 4 | `BE 9902` erfassen (sonst gleich), danach in der Liste (Standort Pieterlen) «Ausser Betrieb nehmen» | Status «Ausser Betrieb» | A1 |
+| 5 | Standort Biel Bahnhof, bei `BE 100001` «Bearbeiten», Standort Lyss Zentrum, «Speichern» | **409** Standortwechsel nicht möglich (offene Reservationen aus den Testdaten) | A1 |
+| 6 | Bei `BE 100001` «Ausser Betrieb nehmen» | **409** Ausserbetriebnahme nicht möglich | A1 |
+| 7 | Fahrzeuge zusätzlich in einem zweiten Tab öffnen. Tab 1: `BE 9901` bearbeiten, Modell `Ford Transit Custom`, speichern. Tab 2, ohne neu zu laden: `BE 9901` bearbeiten und speichern | Tab 1 gespeichert, Tab 2 **409** «zwischenzeitlich geändert» | A1 |
+| | **Kunden** | | |
+| 8 | «Kunde erfassen»: `Mia Muster`, `mia.muster@example.ch` | «Erfasst: Mia Muster …» | A2 |
+| 9 | Nochmals erfassen: `Mia Muster`, `MIA.Muster@Example.ch` | **409** E-Mail existiert bereits | A2 |
+| 10 | Suche `Kunde 00002`, «Sperren» | «Kunde 00002 ist gesperrt …» | A2 |
+| | **Buchen** | | |
+| 11 | Kunde `Mia` wählen; Standort Pieterlen, Kategorie Transporter; «Freie Fahrzeuge suchen» | `BE 9901` in der Liste, `BE 9902` (ausser Betrieb) nicht | A6, A1 |
+| 12 | Bei `BE 9901` «Reservieren» | «Reserviert: BE 9901 für Mia Muster, …, Abholung in Pieterlen.» | A3 |
+| 13 | Zeit 12:00–16:00, suchen | `BE 9901` fehlt, weil es sich mit 10–14 überschneidet | A6, A3 |
+| 14 | Zeit 14:00–16:00, suchen, `BE 9901` reservieren | Angeboten und reserviert: direkt anschliessend ist erlaubt | A6, A3 |
+| 15 | Zeit 16:00–20:00, suchen. Unter «Gleichzeitig buchen»: Fahrzeug `BE 9901`, zweiter Kunde `Kunde 00003`, «Beide Anfragen gleichzeitig senden» | Anfrage A (16–20) und B (18–22) laufen gleichzeitig: eine **201**, die andere **409** mit Grund | A3 |
+| 16 | Beginn und Ende auf gestern 10:00–14:00, suchen, ein Fahrzeug reservieren | **400** Beginn in der Vergangenheit | A3 |
+| 17 | «Anderen Kunden wählen», `Kunde 00002` (Schritt 10); morgen 20:00–22:00, alle Standorte und Kategorien, ein Fahrzeug reservieren | **409** Kunde gesperrt | A2 |
+| 18 | Ende vor Beginn, suchen | **400** «bis muss nach von liegen» | A6 |
+| | **Reservationen** | | |
+| 19 | Kunde `Mia` wählen | Reservationen von morgen, neueste zuerst | A4 |
+| 20 | Bei 10:00–14:00 «Stornieren» | «Storniert: …», die Zeile bleibt mit Status Storniert | A3 |
+| 21 | Buchen: `Mia`, Zeit 12:00–14:00, Pieterlen, Transporter, suchen | `BE 9901` ist wieder frei | A3 |
+| 22 | Reservationen: `Kunde 00001`; «Weiter», «Pro Seite» 50, Status «Storniert» | 2'314 Reservationen auf 116 Seiten; mit Filter nur die 342 stornierten | A4 |
+| | **Nutzung und Fahrtabschluss** | | |
+| 23 | Nutzung: Monat September 2026, «Auswerten», danach «Erneut abfragen» | Werte je Abholstandort und je Fahrzeug mit Auslastung. «Server»: erste Abfrage eines Monats einige ms (Datenbank), danach meist unter 1 ms (Cache) | A7 |
+| 24 | Monat Oktober 2026, «Auswerten» | Alle Standorte mit 0: Nach dem Stichtag gibt es noch keine abgeschlossenen Fahrten | A7 |
+| 25 | Reservationen: `Kunde 11459`, bei `BE 100064` «Fahrt abschliessen»; km-Stand `31000`, Rückgabe 7.10.2026 05:00 | **400** km-Stand kleiner als bisher (31'150); die Reservation bleibt aktiv | A5 |
+| 26 | km-Stand `31270`, «Fahrt abschliessen» | «120 km gefahren, neuer km-Stand 31'270»; Status Abgeschlossen, kein zweiter Abschluss angeboten. Unter Fahrzeuge (Biel Bahnhof, Seite 4) hat `BE 100064` jetzt 31'270 km | A5 |
+| 27 | Nutzung: Oktober 2026, «Auswerten» | Biel Bahnhof 1 Fahrt, 12.7 Stunden, 120 km, ohne Neustart. «Server» wieder einige ms: Der Abschluss hat den Cache geleert | A7 |
+
+Den Ausgangszustand stellen ein erneuter Lauf von `scripts/testdaten.sql` und ein Neustart der Anwendung wieder her.
+
+### Nur über Swagger UI oder Tests
+
+Einige Regeln lässt die Oberfläche gar nicht erst zu. Sie gelten trotzdem in der API:
+
+| Prüffall | Grund | In Swagger UI | Test |
+|---|---|---|---|
+| Storno nach Beginn → 409 | Storno wird nur vor Beginn angeboten | `POST /api/reservationen/108854/stornieren` | `ReservationApiTest.stornoNachBeginnGibt409` |
+| Zweiter Abschluss → 409 | Kein Knopf nach dem Abschluss | Nach Schritt 26: `POST /api/reservationen/108809/abschliessen` mit `{"kmEnde": 31300, "rueckgabeAm": "2026-10-07T05:00:00+02:00"}` | `FahrtAbschlussTest.zweiterAbschlussGibt409` |
+| Reservation für ein Fahrzeug ausser Betrieb → 409 | Die Suche bietet es nicht an | ID von `BE 9902` aus `GET /api/fahrzeuge?standortId=5`, dann `POST /api/reservationen` mit `{"kundeId": 1, "fahrzeugId": <ID>, "beginn": "2027-06-01T10:00:00+02:00", "ende": "2027-06-01T14:00:00+02:00"}` | `ReservationApiTest.fahrzeugAusserBetriebGibt409` |
+| Reservation mit Ende ≤ Beginn → 400 | Die Suche prüft den Zeitraum vorher | `POST /api/reservationen` mit `beginn` gleich `ende` | `ReservationApiTest.endeVorOderGleichBeginnGibt400` |
+| Seitengrösse über 100 → 400 | Die Oberfläche bietet 10, 20 und 50 | `GET /api/kunden/1/reservationen?groesse=101` | `KundenReservationApiTest.groesseUeber100Gibt400` |
+| Zweite Transaktion wartet auf die erste | Nur im Ablauf der Datenbank sichtbar | – | `ReservationNebenlaeufigkeitTest` |
+| Rollback nach Schreibzugriff in A5 | Die Oberfläche zeigt nur das Ergebnis | – | `FahrtAbschlussTest` |
+| Anzahl SQL-Abfragen (N+1) | Nur im SQL-Log sichtbar | – | `ReservationslisteAbfragenTest` |
+| Cache-Treffer ohne SQL | Die Oberfläche zeigt nur die Serverzeit | – | `NutzungCacheTest` |
+
+Weitere Beispielaufrufe: `http/requests.http` im HTTP Client von IntelliJ, auf einer Datenbank ohne Testdaten von oben
+nach unten. Gleichzeitige Reservationen im Terminal: `scripts/demo-konflikt.sh <fahrzeugId> <kundeIdA> <kundeIdB>`.
+
+## Tests
+
+```bash
+mvn test
+```
+
+Oder in IntelliJ: Rechtsklick auf `src/test/java` → *Run 'All Tests'*. Docker muss laufen: Testcontainers startet ein
+eigenes PostgreSQL 16, unabhängig von der Datenbank aus `compose.yaml`. Die Tests brauchen keine Testdaten und legen
+ihre Daten selbst an.
+
+| Bereich | Testklassen (Anzahl Tests) | Tests |
+|---|---|---|
+| Schema und Migrationen | `MigrationTest` (2), `AbholstandortMigrationTest` (1), `SchemaConstraintsTest` (9), `EntityMappingTest` (1), `FahrtNutzungViewTest` (1) | 14 |
+| A1, A2 | `FahrzeugApiTest` (12), `KundeApiTest` (10) | 22 |
+| A3, A4, A5 | `ReservationApiTest` (11), `ReservationNebenlaeufigkeitTest` (2), `KundenReservationApiTest` (9), `ReservationslisteAbfragenTest` (2), `FahrtAbschlussTest` (8) | 32 |
+| A6 | `VerfuegbarkeitApiTest` (9) | 9 |
+| A7 und Cache | `NutzungRepositoryTest` (4), `NutzungApiTest` (4), `NutzungCacheTest` (5) | 13 |
+| Index und Swagger UI | `KundenIndexTest` (1), `SwaggerTest` (2) | 3 |
+| **Total** | 18 Klassen | **93** |
+
+Die Zuordnung zu den Prüffällen steht unter [Prüffälle und Tests](#prüffälle-und-tests).
+
+## Nachweise je Kriterium
+
+| Kriterium (Punkte) | Teilkriterien | Nachweis |
+|---|---|---|
+| Fachliche Vollständigkeit, JPA und API (15) | Fachfunktionen 6, JPA und Beziehungen 5, DTOs und Schichten 4 | [Prüfanleitung](#prüfanleitung), [Prüffälle und Tests](#prüffälle-und-tests); `EntityMappingTest`; Records als DTOs, Controller → Service → Repository ([Projektstruktur](#projektstruktur)); Swagger UI |
+| Datenmodell, Constraints und Migrationen (15) | Modell und ER 5, Integrität in der DB 5, Neuaufbau und Folgemigration 5 | [Datenmodell](#datenmodell), [Entscheidungen](#entscheidungen); `SchemaConstraintsTest`; `MigrationTest`, `AbholstandortMigrationTest` (V7 mit Backfill) |
+| Transaktionen und Nebenläufigkeit (15) | Atomare Operation 5, Rollback nach Schreibzugriff 5, Schutz vor Konkurrenz 5 | `FahrtAbschlussTest`, `ReservationNebenlaeufigkeitTest`, `FahrzeugApiTest.veralteteVersionGibt409`; Prüfanleitung Schritte 7, 15, 25 |
+| Query Design, JDBC, View und Pagination (15) | JPQL/DTO 3, JDBC mit JOIN und Aggregation 5, View 3, Filter, Sortierung, Pagination 4 | T6 und T7 unter [Technische Nachweise](#technische-nachweise-t1t12); `FahrzeugRepository.findeVerfuegbare`, `NutzungRepository`, V8 `v_fahrt_nutzung` |
+| Performance, Index und ORM-Ladeverhalten (15) | Datenmenge 3, Pläne und Messungen 5, Index 3, ORM 4 | [docs/performance.md](docs/performance.md), `scripts/testdaten.sql`, `scripts/messung-a4.sql`, V9, `KundenIndexTest`, `ReservationslisteAbfragenTest` |
+| Integrationstests und Reproduzierbarkeit (10) | Tests 6, Start- und Testanleitung 4 | [Tests](#tests), dieses README |
+| Cache und Aktualität (5) | Strategie 2, Treffer und Verhalten nach Änderung 3 | [Entscheidungen](#entscheidungen) (Cache), `NutzungCacheTest`; Prüfanleitung Schritte 23 und 27 |
 
 ## API
 
@@ -77,7 +267,7 @@ Fehler kommen als Problem Details (RFC 9457): 400 ungültige Eingabe (mit `fehle
 404 unbekannte ID, 409 Konflikt mit einer Geschäftsregel oder dem aktuellen Datenbestand.
 Zeitpunkte sind ISO 8601 mit Zeitzone, Zeiträume halboffen `[von, bis)`.
 
-## Fachanforderungen und Nachweise
+## Prüffälle und Tests
 
 Jeder Prüffall aus dem Projektsteckbrief hat einen automatisierten Test gegen PostgreSQL.
 
@@ -109,8 +299,7 @@ Jeder Prüffall aus dem Projektsteckbrief hat einen automatisierten Test gegen P
 | A7 | Wiederholte Abfrage ohne SQL aus dem Cache | `NutzungCacheTest.zweiterAufrufKommtOhneSqlAusDemCache` |
 | A7 | Nach A5 sofort der neue Wert | `NutzungCacheTest.nachFahrtabschlussSofortDerNeueWert` |
 
-Weitere Fälle (400, 404, Filter, Grenzen) stehen in denselben Testklassen.
-Die Tests liegen unter `src/test/java/ch/hftm/seelandmobil/`.
+Weitere Fälle (400, 404, Filter, Grenzen) stehen in denselben Testklassen unter `src/test/java/ch/hftm/seelandmobil/`.
 
 ## Technische Nachweise T1–T12
 
@@ -127,7 +316,7 @@ Die Tests liegen unter `src/test/java/ch/hftm/seelandmobil/`.
 | T9 | Mindestens 100'000 Datensätze, reproduzierbar | `scripts/testdaten.sql`: 121'880 Reservationen; Zufallswerte aus md5 fester Schlüssel statt `random()` | `docs/performance.md` |
 | T10 | EXPLAIN ANALYZE, Index, vorher/nachher | A4-Abfrage; V9 `ix_reservation_kunde_beginn`; 5 Läufe, Median | `scripts/messung-a4.sql`, `docs/performance.md`, `KundenIndexTest` |
 | T11 | ORM-Ladeverhalten, N+1 | A4 als Entity-Liste 12/30/60 Abfragen bei Seitengrösse 5/20/50, mit Fetch Join immer 2 | `ReservationslisteAbfragenTest.entityListeLaedtProZeileNachFetchJoinNicht` |
-| T12 | Cache und Aktualität | Standortauswertung (A7), Schlüssel `(von, bis)` als Zeitpunkte; geleert nach dem COMMIT jedes Fahrtabschlusses | `NutzungCacheTest`: erster Zugriff, Treffer ohne SQL, nach Änderung, Rollback, Abfrage vor dem COMMIT |
+| T12 | Cache und Aktualität | Standortauswertung (A7), Schlüssel `(von, bis)` als Zeitpunkte; geleert nach dem COMMIT jedes Fahrtabschlusses; Header `Server-Timing` zeigt Treffer in der Oberfläche | `NutzungCacheTest`: erster Zugriff, Treffer ohne SQL, nach Änderung, Rollback, Abfrage vor dem COMMIT |
 
 ## Datenmodell
 
@@ -169,22 +358,18 @@ Messung wiederholen (Testdaten geladen, Anwendung nicht in Betrieb):
 docker compose exec -T db psql -U seeland -d seeland < scripts/messung-a4.sql
 ```
 
-## Oberfläche
+In Windows PowerShell wie bei den Testdaten mit `docker compose cp` und `psql -f`.
 
-Laut Projektsteckbrief genügt die API; die Oberfläche ist eine freiwillige Ergänzung für die Vorführung.
-Alle Nachweise laufen weiterhin über die API und die Tests. Sie besteht aus statischen Dateien
-(`src/main/resources/static`, HTML, CSS und JavaScript ohne Framework und ohne Build) und nutzt nur die REST-API.
+## Häufige Probleme
 
-| Bereich | Inhalt | Anf. |
-|---|---|---|
-| Buchen | Freie Fahrzeuge suchen, reservieren; zwei gleichzeitige Buchungen → 201 und 409 | A3, A6 |
-| Reservationen | Reservationen eines Kunden seitenweise, Storno, Fahrt abschliessen | A4, A3, A5 |
-| Fahrzeuge | Erfassen, ändern (mit Version), ausser Betrieb nehmen | A1 |
-| Kunden | Suchen, erfassen, ändern, sperren | A2 |
-| Nutzung | Je Abholstandort und je Fahrzeug, mit Antwortzeit: die zweite Abfrage kommt aus dem Cache | A7 |
-
-Texte aus der Datenbank werden immer als Text eingefügt, nie als HTML. Die Schrift Barlow liegt lokal bei
-(SIL Open Font License 1.1, `static/fonts/OFL.txt`), die Oberfläche braucht also keine Internetverbindung.
+| Problem | Lösung |
+|---|---|
+| `docker compose up` meldet, Port 5432 sei belegt | Lokales PostgreSQL beenden oder den Port in `compose.yaml` und `application.yml` ändern |
+| Anwendung startet nicht: `Connection refused` | Datenbank läuft nicht: Docker Desktop starten, `docker compose up -d` |
+| Tests scheitern mit «Could not find a valid Docker environment» | Docker Desktop starten |
+| Testdaten: `relation "fahrt" does not exist` | Die Anwendung einmal starten, damit Flyway das Schema anlegt |
+| Nutzung zeigt nach dem Laden der Testdaten alte Werte | Anwendung neu starten (Cache) |
+| «Fahrt abschliessen» fehlt | Wird nur für aktive Reservationen angeboten, deren Beginn erreicht ist; vor Beginn steht «Stornieren» |
 
 ## KI und Hilfsmittel
 
@@ -200,9 +385,11 @@ src/main/java/ch/hftm/seelandmobil/
   reservation/   A3 Reservationen, A4 Liste je Kunde, A5 Fahrtabschluss
   auswertung/    A7 Nutzungsauswertung (JDBC, Cache)
   common/        Fehlerbehandlung, Seiten, Konfiguration
-src/main/resources/db/migration/   Flyway V1–V9
-src/main/resources/static/         Oberfläche (HTML, CSS, JavaScript)
+src/main/resources/
+  db/migration/  Flyway V1–V9
+  static/        Oberfläche: index.html, css/, js/ (app.js, api.js, dom.js, kundenwahl.js, ansichten/), fonts/
+src/test/java/   Integrationstests (Testcontainers)
 scripts/         Testdaten, Messung, Konflikt-Demo
 http/            Beispielaufrufe
-docs/            ER-Diagramm, Performance
+docs/            ER-Diagramm, Performance, Bildschirmfoto
 ```
