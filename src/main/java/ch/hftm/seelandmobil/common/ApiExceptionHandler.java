@@ -34,7 +34,11 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
             "uq_kunde_email",
             new Regel(HttpStatus.CONFLICT, "Ein Kunde mit dieser E-Mail-Adresse existiert bereits."),
             "ex_reservation_ueberschneidung",
-            new Regel(HttpStatus.CONFLICT, "Das Fahrzeug ist im gewünschten Zeitraum bereits reserviert."));
+            new Regel(HttpStatus.CONFLICT, "Das Fahrzeug ist im gewünschten Zeitraum bereits reserviert."),
+            "ck_fahrt_km",
+            new Regel(HttpStatus.BAD_REQUEST, "Der km-Stand bei Rückgabe ist kleiner als der bisherige km-Stand des Fahrzeugs."),
+            "uq_fahrt_reservation",
+            new Regel(HttpStatus.CONFLICT, "Für diese Reservation wurde die Fahrt bereits abgeschlossen."));
 
     @Override
     protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex,

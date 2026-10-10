@@ -64,6 +64,11 @@ public class Fahrzeug {
         this.standort = standort;
     }
 
+    /** Nur beim Fahrtabschluss (A5); ob der Wert plausibel ist, prüft die Datenbank an der Fahrt. */
+    public void kmStandNachfuehren(int kmStand) {
+        this.kmStand = kmStand;
+    }
+
     public void ausserBetriebNehmen() {
         this.inBetrieb = false;
     }

@@ -16,9 +16,11 @@ import java.net.URI;
 public class ReservationController {
 
     private final ReservationService service;
+    private final FahrtService fahrtService;
 
-    public ReservationController(ReservationService service) {
+    public ReservationController(ReservationService service, FahrtService fahrtService) {
         this.service = service;
+        this.fahrtService = fahrtService;
     }
 
     @PostMapping
@@ -35,5 +37,10 @@ public class ReservationController {
     @PostMapping("/{id}/stornieren")
     public ReservationResponse stornieren(@PathVariable Long id) {
         return service.stornieren(id);
+    }
+
+    @PostMapping("/{id}/abschliessen")
+    public FahrtResponse abschliessen(@PathVariable Long id, @Valid @RequestBody FahrtAbschluss abschluss) {
+        return fahrtService.abschliessen(id, abschluss);
     }
 }
