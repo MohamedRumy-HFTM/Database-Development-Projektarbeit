@@ -1,6 +1,7 @@
 package ch.hftm.seelandmobil.auswertung;
 
 import ch.hftm.seelandmobil.common.UngueltigeAnfrageException;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -13,12 +14,19 @@ import java.util.List;
 @Service
 public class NutzungService {
 
+    static final String STANDORT_CACHE = "standortNutzung";
+
     private final NutzungRepository repository;
 
     public NutzungService(NutzungRepository repository) {
         this.repository = repository;
     }
 
+    /**
+     * Gecacht pro Zeitraum. Schlüssel sind die Zeitpunkte als Instant: 10:00+02:00 und 08:00Z
+     * sind derselbe Zeitraum. Geleert wird nach jedem Fahrtabschluss, siehe StandortNutzungCacheLeeren.
+     */
+    @Cacheable(cacheNames = STANDORT_CACHE, key = "{#von.toInstant(), #bis.toInstant()}")
     public List<StandortNutzung> jeStandort(OffsetDateTime von, OffsetDateTime bis) {
         pruefeZeitraum(von, bis);
         return repository.jeStandort(von, bis);

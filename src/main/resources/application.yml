@@ -1,6 +1,9 @@
 spring:
   application:
     name: seeland-mobil
+  cache:
+    type: simple
+    cache-names: standortNutzung
   web:
     # Validierungsmeldungen auf Deutsch, unabhängig vom Browser
     locale: de_CH

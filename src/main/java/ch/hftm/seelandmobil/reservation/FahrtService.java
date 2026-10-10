@@ -5,6 +5,7 @@ import ch.hftm.seelandmobil.common.NotFoundException;
 import ch.hftm.seelandmobil.common.UngueltigeAnfrageException;
 import ch.hftm.seelandmobil.fahrzeug.Fahrzeug;
 import ch.hftm.seelandmobil.fahrzeug.FahrzeugRepository;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,13 +21,15 @@ public class FahrtService {
     private final ReservationRepository reservationen;
     private final FahrtRepository fahrten;
     private final FahrzeugRepository fahrzeuge;
+    private final ApplicationEventPublisher ereignisse;
     private final Clock clock;
 
     public FahrtService(ReservationRepository reservationen, FahrtRepository fahrten,
-                        FahrzeugRepository fahrzeuge, Clock clock) {
+                        FahrzeugRepository fahrzeuge, ApplicationEventPublisher ereignisse, Clock clock) {
         this.reservationen = reservationen;
         this.fahrten = fahrten;
         this.fahrzeuge = fahrzeuge;
+        this.ereignisse = ereignisse;
         this.clock = clock;
     }
 
@@ -60,6 +63,9 @@ public class FahrtService {
         // schlägt das Update über die version fehl (409) und alles wird zurückgerollt.
         fahrzeug.kmStandNachfuehren(abschluss.kmEnde());
         fahrzeuge.saveAndFlush(fahrzeug);
+
+        // Die Nutzungsauswertung (A7) reagiert erst nach dem COMMIT darauf.
+        ereignisse.publishEvent(new FahrtAbgeschlossen(reservationId));
 
         return FahrtResponse.von(fahrt, fahrzeug.getId());
     }
