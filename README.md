@@ -89,6 +89,10 @@ Damit lässt sich der Ausgangszustand nach der Prüfung jederzeit wiederherstell
 | Reservationen | 121'880 von Oktober 2024 bis März 2027. Stichtag 1.10.2026: davor abgeschlossen (85 %) oder storniert, danach offen (aktiv) oder storniert |
 | Fahrten | 91'799, eine je abgeschlossene Reservation |
 
+Verteilung: Biel Bahnhof hat 70 Fahrzeuge, Biel Bözingen und Lyss je 40, die übrigen fünf Standorte je 18; grössere
+Standorte sind stärker ausgelastet. Die Kunden sind stark ungleich verteilt: Median 4 Reservationen, Maximum 2'314.
+So zeigen Filter, Seiten und Auswertungen sowohl kleine als auch grosse Ergebnismengen.
+
 Kunden mit Besonderheiten:
 
 | Kunde | Besonderheit |
