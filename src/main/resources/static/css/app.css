@@ -72,7 +72,7 @@ body {
 .leiste-fuss a { color: var(--tinte-leise); }
 
 /* Inhalt */
-main { padding: 2rem 2.4rem 4rem; max-width: 72rem; width: 100%; }
+main { padding: 2rem 2.4rem 4rem; max-width: 72rem; width: 100%; min-width: 0; }
 h1, h2, h3 { font-family: var(--schmal); font-weight: 600; line-height: 1.15; margin: 0; }
 h1 { font-size: 2rem; }
 h2 { font-size: 1.35rem; margin: 2.4rem 0 .7rem; }
@@ -211,7 +211,7 @@ tr.bearbeiten td { background: var(--flaeche); }
 
 @media (max-width: 760px) {
   body { grid-template-columns: 1fr; }
-  .leiste { position: static; height: auto; padding: 1rem 0 0; border-right: 0; border-bottom: 1px solid var(--linie); }
+  .leiste { position: static; height: auto; min-width: 0; padding: 1rem 0 0; border-right: 0; border-bottom: 1px solid var(--linie); }
   .marke { padding: 0 1rem .8rem; }
   .leiste nav ul { display: flex; overflow-x: auto; }
   .leiste nav a { border-left: 0; border-bottom: 3px solid transparent; padding: .5rem .9rem; white-space: nowrap; }
