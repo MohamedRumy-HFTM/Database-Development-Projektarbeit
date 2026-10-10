@@ -13,7 +13,9 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
+import static org.hamcrest.Matchers.matchesPattern;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -71,6 +73,7 @@ class NutzungApiTest {
     void jeStandortAlleAchtStandorte() throws Exception {
         mvc.perform(get("/api/auswertungen/standorte").param("von", VON).param("bis", BIS))
                 .andExpect(status().isOk())
+                .andExpect(header().string("Server-Timing", matchesPattern("auswertung;dur=\\d+\\.\\d{2}")))
                 .andExpect(jsonPath("$.length()").value(8))
                 .andExpect(jsonPath("$[0].standortName").value("Nidau"))
                 .andExpect(jsonPath("$[0].anzahlFahrten").value(1))
