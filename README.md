@@ -160,6 +160,10 @@ Messung wiederholen (Testdaten geladen, Anwendung nicht in Betrieb):
 docker compose exec -T db psql -U seeland -d seeland < scripts/messung-a4.sql
 ```
 
+## KI und Hilfsmittel
+
+Hilfsmittelverzeichnis: [Hilfsmittelverzeichnis.pdf](Hilfsmittelverzeichnis.pdf)
+
 ## Projektstruktur
 
 ```
