@@ -16,3 +16,9 @@ spring:
     open-in-view: false
     hibernate:
       ddl-auto: validate
+springdoc:
+  # Swagger UI unter http://localhost:8080/swagger-ui.html, Beschreibung unter /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+  paths-to-match: /api/**
