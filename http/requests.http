@@ -1,5 +1,5 @@
-### Beispiel-Requests für den HTTP Client von IntelliJ.
-### Anwendung auf einer frischen Datenbank starten und die Requests von oben nach unten ausführen.
+# Beispiel-Requests für den HTTP Client von IntelliJ.
+# Anwendung auf einer frischen Datenbank starten und die Requests von oben nach unten ausführen.
 
 ### Standorte
 GET http://localhost:8080/api/standorte
@@ -151,6 +151,30 @@ Content-Type: application/json
 
 ### A3 – Reservation lesen
 GET http://localhost:8080/api/reservationen/{{reservationId}}
+
+### A5 – Fahrt abschliessen, Reservation hat noch nicht begonnen → 409
+POST http://localhost:8080/api/reservationen/{{reservationId}}/abschliessen
+Content-Type: application/json
+
+{
+  "kmEnde": 15200,
+  "rueckgabeAm": "{{$isoTimestamp}}"
+}
+
+### A5 – Fahrt abschliessen (erfolgreich)
+# Braucht eine laufende Reservation aus den Testdaten (scripts/testdaten.sql):
+#   SELECT r.id, f.km_stand FROM reservation r JOIN fahrzeug f ON f.id = r.fahrzeug_id
+#   WHERE r.status = 'AKTIV' AND r.beginn < now() ORDER BY r.beginn LIMIT 1;
+# id und km_stand unten eintragen. Ein kmEnde unter km_stand ergibt 400, und nichts wird gespeichert.
+@laufendeReservationId = 0
+@kmEnde = 0
+POST http://localhost:8080/api/reservationen/{{laufendeReservationId}}/abschliessen
+Content-Type: application/json
+
+{
+  "kmEnde": {{kmEnde}},
+  "rueckgabeAm": "{{$isoTimestamp}}"
+}
 
 ### A2 – Kunde sperren
 POST http://localhost:8080/api/kunden/{{kundeId}}/sperren
