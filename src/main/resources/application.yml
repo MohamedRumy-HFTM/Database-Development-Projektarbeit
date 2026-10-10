@@ -1,0 +1,11 @@
+spring:
+  application:
+    name: seeland-mobil
+  datasource:
+    url: jdbc:postgresql://localhost:5432/seeland
+    username: seeland
+    password: seeland
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
