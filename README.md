@@ -15,13 +15,20 @@ docker compose up -d
 ```
 
 Anwendung starten: in IntelliJ `SeelandMobilApplication` oder `mvn spring-boot:run`.
-Beim Start baut Flyway das Schema auf (`src/main/resources/db/migration`). Die API läuft auf `http://localhost:8080`.
+Beim Start baut Flyway das Schema auf (`src/main/resources/db/migration`). Danach:
+
+| Adresse | Inhalt |
+|---|---|
+| `http://localhost:8080` | Oberfläche für die Disposition |
+| `http://localhost:8080/swagger-ui.html` | Swagger UI mit allen Endpoints |
+| `http://localhost:8080/api/…` | REST-API |
 
 Tests: in IntelliJ Rechtsklick auf `src/test/java` → *Run 'All Tests'* oder `mvn test`.
 Die Tests starten mit Testcontainers ein eigenes PostgreSQL 16; Docker muss laufen.
 
-API ausprobieren: `http/requests.http` im HTTP Client von IntelliJ von oben nach unten ausführen
-(frische Datenbank). Gleichzeitige Reservationen live zeigen:
+API ausprobieren: in der Oberfläche, in Swagger UI oder mit `http/requests.http` im HTTP Client von IntelliJ
+(von oben nach unten, frische Datenbank). Gleichzeitige Reservationen live zeigen: in der Oberfläche unter
+*Buchen → Gleichzeitig buchen* oder im Terminal:
 
 ```bash
 scripts/demo-konflikt.sh <fahrzeugId> <kundeIdA> <kundeIdB>
@@ -47,10 +54,12 @@ Standortauswertung keine Werte von vorher enthält.
 | Methode | Pfad | Anf. |
 |---|---|---|
 | GET | `/api/standorte` | – |
+| GET | `/api/fahrzeuge?standortId=&seite=&groesse=` | A1 |
 | POST | `/api/fahrzeuge` | A1 |
 | GET | `/api/fahrzeuge/{id}` | A1 |
 | PUT | `/api/fahrzeuge/{id}` | A1 |
 | POST | `/api/fahrzeuge/{id}/ausser-betrieb` | A1 |
+| GET | `/api/kunden?suche=&seite=&groesse=` | A2 |
 | POST | `/api/kunden` | A2 |
 | GET | `/api/kunden/{id}` | A2 |
 | PUT | `/api/kunden/{id}` | A2 |
@@ -160,6 +169,23 @@ Messung wiederholen (Testdaten geladen, Anwendung nicht in Betrieb):
 docker compose exec -T db psql -U seeland -d seeland < scripts/messung-a4.sql
 ```
 
+## Oberfläche
+
+Laut Projektsteckbrief genügt die API; die Oberfläche ist eine freiwillige Ergänzung für die Vorführung.
+Alle Nachweise laufen weiterhin über die API und die Tests. Sie besteht aus statischen Dateien
+(`src/main/resources/static`, HTML, CSS und JavaScript ohne Framework und ohne Build) und nutzt nur die REST-API.
+
+| Bereich | Inhalt | Anf. |
+|---|---|---|
+| Buchen | Freie Fahrzeuge suchen, reservieren; zwei gleichzeitige Buchungen → 201 und 409 | A3, A6 |
+| Reservationen | Reservationen eines Kunden seitenweise, Storno, Fahrt abschliessen | A4, A3, A5 |
+| Fahrzeuge | Erfassen, ändern (mit Version), ausser Betrieb nehmen | A1 |
+| Kunden | Suchen, erfassen, ändern, sperren | A2 |
+| Nutzung | Je Abholstandort und je Fahrzeug, mit Antwortzeit: die zweite Abfrage kommt aus dem Cache | A7 |
+
+Texte aus der Datenbank werden immer als Text eingefügt, nie als HTML. Die Schrift Barlow liegt lokal bei
+(SIL Open Font License 1.1, `static/fonts/OFL.txt`), die Oberfläche braucht also keine Internetverbindung.
+
 ## KI und Hilfsmittel
 
 Hilfsmittelverzeichnis: [Hilfsmittelverzeichnis.pdf](Hilfsmittelverzeichnis.pdf)
@@ -175,6 +201,7 @@ src/main/java/ch/hftm/seelandmobil/
   auswertung/    A7 Nutzungsauswertung (JDBC, Cache)
   common/        Fehlerbehandlung, Seiten, Konfiguration
 src/main/resources/db/migration/   Flyway V1–V9
+src/main/resources/static/         Oberfläche (HTML, CSS, JavaScript)
 scripts/         Testdaten, Messung, Konflikt-Demo
 http/            Beispielaufrufe
 docs/            ER-Diagramm, Performance
