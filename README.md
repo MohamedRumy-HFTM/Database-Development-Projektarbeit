@@ -2,7 +2,10 @@
 
 Carsharing-Verwaltung für einen regionalen Anbieter im Seeland: Fahrzeuge, Kunden, Reservationen,
 Fahrtabschluss und Nutzungsauswertung. REST-API mit Spring Boot und PostgreSQL, dazu eine Oberfläche im Browser.
-Projektarbeit Database Development, HFTM.
+
+Projektarbeit Database Development, HFTM · Mohamed Rumy · Dozent: Simon Erhardt
+Projektsteckbrief: [aktualisierte Fassung](docs/projektsteckbrief.pdf) (Stand der Abgabe) ·
+[eingereichte Fassung vom 07.10.2026](docs/projektsteckbrief-eingereicht.pdf)
 
 ## Für die Bewertung
 
@@ -360,5 +363,5 @@ src/main/resources/
 src/test/java/   Integrationstests (Testcontainers)
 scripts/         Testdaten, Messung, Konflikt-Demo
 http/            Beispielaufrufe
-docs/            ER-Diagramm, Performance, Bildschirmfoto
+docs/            ER-Diagramm, Performance, Prüfanleitung, Projektsteckbrief, Bildschirmfoto
 ```
