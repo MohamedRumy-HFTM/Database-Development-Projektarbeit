@@ -313,6 +313,18 @@ docker compose exec -T db psql -U seeland -d seeland < scripts/messung-a4.sql
 
 In Windows PowerShell wie bei den Testdaten mit `docker compose cp` und `psql -f`.
 
+## Einschränkungen
+
+| Einschränkung | Folge |
+|---|---|
+| Keine Anmeldung und keine Rollen (laut Steckbrief ausgeschlossen) | Wer die Adresse erreicht, kann alle Daten ändern |
+| Sperren eines Kunden und Ausserbetriebnahme eines Fahrzeugs lassen sich nicht rückgängig machen | Zurück nur über die Datenbank oder neue Testdaten |
+| Cache im Speicher einer einzelnen Instanz (`spring.cache.type: simple`) | Bei mehreren Instanzen bräuchte es einen gemeinsamen Cache oder eine verteilte Leerung |
+| Standort-Auslastung rechnet mit dem heutigen Fahrzeugbestand | Für vergangene Monate mit verschobenen oder ausser Betrieb genommenen Fahrzeugen nur angenähert |
+| A6 bewusst als JPQL statt nativem SQL mit `&&` | 16 statt 2.6 ms pro Suche mit den Testdaten (siehe [Entscheidungen](#entscheidungen)) |
+| Testdaten mit festem Stichtag 1.10.2026 | Laufende Reservationen und Beispielkunden passen zu diesem Datum; eigene Buchungen in der Zukunft funktionieren unabhängig davon |
+| Messungen in einer Linux-Umgebung mit PostgreSQL 16.15 | Absolute Zeiten weichen auf anderen Rechnern ab, das Verhältnis ohne und mit Index bleibt vergleichbar |
+
 ## Häufige Probleme
 
 | Problem | Lösung |
