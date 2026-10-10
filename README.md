@@ -42,6 +42,15 @@ docker compose exec -T db psql -U seeland -d seeland -v ON_ERROR_STOP=1 < script
 Erzeugt 240 Fahrzeuge, 20'000 fiktive Kunden, 121'880 Reservationen und rund 92'000 Fahrten.
 Jeder Lauf ersetzt die bestehenden Daten und erzeugt exakt dieselben Datensätze.
 
+## Performance
+
+Messungen zu Datenmenge, Index (V9), N+1 und Cache: [docs/performance.md](docs/performance.md).
+Messung wiederholen (Testdaten geladen, Anwendung nicht in Betrieb):
+
+```bash
+docker compose exec -T db psql -U seeland -d seeland < scripts/messung-a4.sql
+```
+
 ## Datenmodell
 
 ![ER-Diagramm](docs/er-diagramm.png)
