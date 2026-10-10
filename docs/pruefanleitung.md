@@ -36,12 +36,12 @@ Fehlermeldungen beginnen mit dem HTTP-Status (**400**, **409**), wie ihn die API
 | 21 | Buchen: `Mia`, Zeit 12:00–14:00, Pieterlen, Transporter, suchen | `BE 9901` ist wieder frei | A3 |
 | 22 | Reservationen: `Kunde 00001`; «Weiter», «Pro Seite» 50, Status «Storniert» | 2'314 Reservationen auf 116 Seiten; mit Filter nur die 342 stornierten | A4 |
 | | **Nutzung und Fahrtabschluss** | | |
-| 23 | Nutzung: Monat September 2026, «Auswerten», danach «Erneut abfragen» | Je Abholstandort Fahrten, Stunden, Kilometer, Fahrzeuge und Auslastung, z. B. Biel Bahnhof 70 Fahrzeuge und 36.9 %; Pieterlen 19 Fahrzeuge (mit `BE 9901`, ohne `BE 9902` ausser Betrieb). Je Fahrzeug die Auslastung. «Server»: erste Abfrage eines Monats einige ms (Datenbank), danach meist unter 1 ms (Cache) | A7 |
+| 23 | Nutzung: Monat August 2026, «Auswerten», danach «Erneut abfragen». Dann Monat September 2026, «Auswerten» | August: «Server» zuerst einige ms (Datenbank), danach meist unter 1 ms (Cache). September: je Abholstandort Fahrten, Stunden, Kilometer, Fahrzeuge und Auslastung, z. B. Biel Bahnhof 70 Fahrzeuge und 36.9 %; Pieterlen 19 Fahrzeuge (mit `BE 9901`, ohne `BE 9902` ausser Betrieb). Je Fahrzeug die Auslastung | A7 |
 | 24 | Monat Oktober 2026, «Auswerten» | Alle Standorte mit 0: Nach dem Stichtag gibt es noch keine abgeschlossenen Fahrten | A7 |
 | 25 | Reservationen: `Kunde 11459`, bei `BE 100064` «Fahrt abschliessen»; km-Stand `31000`, Rückgabe 7.10.2026 05:00 | **400** km-Stand kleiner als bisher (31'150); die Reservation bleibt aktiv | A5 |
 | 26 | km-Stand `31270`, «Fahrt abschliessen» | «120 km gefahren, neuer km-Stand 31'270»; Status Abgeschlossen, kein zweiter Abschluss angeboten. Unter Fahrzeuge (Biel Bahnhof, Seite 4) hat `BE 100064` jetzt 31'270 km | A5 |
-| 27 | Nutzung: Oktober 2026, «Auswerten» | Biel Bahnhof 1 Fahrt, 12.7 Stunden, 120 km, ohne Neustart. «Server» wieder einige ms: Der Abschluss hat den Cache geleert | A7 |
-| 28 | Fahrzeuge: `BE 9903` in Pieterlen erfassen (sonst wie Schritt 1). Danach Nutzung: September 2026, «Auswerten» | Pieterlen jetzt mit 20 Fahrzeugen und tieferer Auslastung; «Server» wieder einige ms: Das neue Fahrzeug hat den Cache geleert | A7, A1 |
+| 27 | Nutzung: Oktober 2026, «Auswerten» | Biel Bahnhof 1 Fahrt, 12.7 Stunden, 120 km, ohne Neustart: Der Abschluss hat den Cache geleert | A7 |
+| 28 | Fahrzeuge: `BE 9903` in Pieterlen erfassen (sonst wie Schritt 1). Danach Nutzung: September 2026, «Auswerten» | Pieterlen jetzt mit 20 Fahrzeugen und 19.8 % statt 20.9 %, ohne Neustart: Das neue Fahrzeug hat den Cache geleert | A7, A1 |
 
 Den Ausgangszustand stellen ein erneuter Lauf von `scripts/testdaten.sql` und ein Neustart der Anwendung wieder her.
 
