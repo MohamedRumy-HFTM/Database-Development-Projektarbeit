@@ -1,5 +1,6 @@
 # Beispiel-Requests für den HTTP Client von IntelliJ.
-# Anwendung auf einer frischen Datenbank starten und die Requests von oben nach unten ausführen.
+# Testdaten frisch laden (scripts/testdaten.sql), Anwendung starten und die Requests von oben nach unten ausführen.
+# Ohne Testdaten laufen alle Requests ausser «A5 – Fahrt abschliessen (erfolgreich)», dem die laufende Reservation fehlt.
 
 ### Standorte
 GET http://localhost:8080/api/standorte
@@ -181,12 +182,10 @@ Content-Type: application/json
 }
 
 ### A5 – Fahrt abschliessen (erfolgreich)
-# Braucht eine laufende Reservation aus den Testdaten (scripts/testdaten.sql):
-#   SELECT r.id, f.km_stand FROM reservation r JOIN fahrzeug f ON f.id = r.fahrzeug_id
-#   WHERE r.status = 'AKTIV' AND r.beginn < now() ORDER BY r.beginn LIMIT 1;
-# id und km_stand unten eintragen. Ein kmEnde unter km_stand ergibt 400, und nichts wird gespeichert.
-@laufendeReservationId = 0
-@kmEnde = 0
+# Laufende Reservation aus den Testdaten: Kunde 11474, BE 100008, ab 6.10.2026, km-Stand 32'794.
+# Ein kmEnde unter 32794 ergibt 400, und nichts wird gespeichert. Für einen zweiten Lauf die Testdaten neu laden.
+@laufendeReservationId = 108854
+@kmEnde = 32874
 POST http://localhost:8080/api/reservationen/{{laufendeReservationId}}/abschliessen
 Content-Type: application/json
 
@@ -195,7 +194,7 @@ Content-Type: application/json
   "rueckgabeAm": "{{$isoTimestamp}}"
 }
 
-### A7 – Nutzung je Standort im September 2026 (nach Abholstandort, meiste Fahrten zuerst)
+### A7 – Nutzung je Standort im September 2026 mit Auslastung (nach Abholstandort, meiste Fahrten zuerst)
 # Mit den Testdaten (Stichtag 1.10.2026). Der zweite Aufruf kommt aus dem Cache, bis eine Fahrt abgeschlossen wird.
 GET http://localhost:8080/api/auswertungen/standorte?von=2026-08-31T22:00:00Z&bis=2026-09-30T22:00:00Z
 
