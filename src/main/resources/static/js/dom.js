@@ -8,7 +8,9 @@ export function h(tag, eigenschaften = {}, ...kinder) {
       element.addEventListener(name.slice(2).toLowerCase(), wert);
     } else if (name === 'class') {
       element.className = wert;
-    } else if (name in element && typeof wert !== 'string') {
+    } else if (name in element && typeof wert !== 'string' && typeof wert !== 'number') {
+      // Wahrheitswerte als Eigenschaft (disabled, hidden, selected); Zahlen und Texte als Attribut,
+      // damit form.reset() auf diese Werte zurückstellt
       element[name] = wert;
     } else {
       element.setAttribute(name, wert === true ? '' : wert);
