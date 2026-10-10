@@ -2,12 +2,17 @@ package ch.hftm.seelandmobil.fahrzeug;
 
 import ch.hftm.seelandmobil.common.ConflictException;
 import ch.hftm.seelandmobil.common.NotFoundException;
+import ch.hftm.seelandmobil.common.Seite;
+import ch.hftm.seelandmobil.common.UngueltigeAnfrageException;
 import ch.hftm.seelandmobil.reservation.ReservationRepository;
 import ch.hftm.seelandmobil.reservation.ReservationStatus;
 import ch.hftm.seelandmobil.standort.Standort;
 import ch.hftm.seelandmobil.standort.StandortRepository;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.OffsetDateTime;
 
 @Service
 @Transactional
@@ -34,6 +39,16 @@ public class FahrzeugService {
     @Transactional(readOnly = true)
     public FahrzeugResponse lesen(Long id) {
         return FahrzeugResponse.von(laden(id));
+    }
+
+    /** A6: Fahrzeuge in Betrieb ohne überschneidende, nicht stornierte Reservation im Zeitraum [von, bis). */
+    @Transactional(readOnly = true)
+    public Seite<VerfuegbaresFahrzeug> verfuegbareSuchen(OffsetDateTime von, OffsetDateTime bis, Long standortId,
+                                                         Kategorie kategorie, int seite, int groesse) {
+        if (!bis.isAfter(von)) {
+            throw new UngueltigeAnfrageException("bis muss nach von liegen.");
+        }
+        return Seite.von(fahrzeuge.findeVerfuegbare(von, bis, standortId, kategorie, PageRequest.of(seite, groesse)));
     }
 
     public FahrzeugResponse aendern(Long id, FahrzeugAenderung aenderung) {
