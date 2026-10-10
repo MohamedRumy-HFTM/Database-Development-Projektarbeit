@@ -25,7 +25,7 @@ Projektarbeit Database Development, HFTM.
 | A4 | Reservationen eines Kunden: nach Status filtern, neueste zuerst, seitenweise |
 | A5 | Fahrt abschliessen: Fahrt anlegen, Reservation abschliessen, km-Stand nachführen, vollständig oder gar nicht |
 | A6 | Freie Fahrzeuge für einen Zeitraum suchen, optional nach Standort und Kategorie |
-| A7 | Nutzung je Abholstandort und je Fahrzeug: Fahrten, Nutzungsstunden, Kilometer, Auslastung |
+| A7 | Nutzung je Abholstandort und je Fahrzeug: Fahrten, Nutzungsstunden, Kilometer und Auslastung |
 
 Abgrenzung: Standorte fest vorgegeben, keine Anmeldung, keine Tarife oder Zahlung.
 
@@ -137,9 +137,9 @@ flowchart LR
 | Reservationen | `#/reservationen` | Reservationen eines Kunden nach Status und seitenweise; Storno vor Beginn, Fahrtabschluss ab Beginn | `GET /api/kunden/{id}/reservationen`, `POST …/stornieren`, `POST …/abschliessen` | A4, A3, A5 |
 | Fahrzeuge | `#/fahrzeuge` | Liste je Standort; erfassen, ändern (mit Version), ausser Betrieb nehmen | `GET` und `POST /api/fahrzeuge`, `PUT /api/fahrzeuge/{id}`, `POST …/ausser-betrieb` | A1 |
 | Kunden | `#/kunden` | Suchen, erfassen, ändern, sperren | `GET` und `POST /api/kunden`, `PUT /api/kunden/{id}`, `POST …/sperren` | A2 |
-| Nutzung | `#/auswertung` | Monat je Abholstandort und je Fahrzeug; die Serverzeit aus dem Header `Server-Timing` zeigt Cache-Treffer | `GET /api/auswertungen/standorte`, `GET /api/auswertungen/fahrzeuge` | A7 |
+| Nutzung | `#/auswertung` | Monat je Abholstandort mit Fahrzeugbestand und Auslastung, je Fahrzeug mit Auslastung; die Serverzeit aus dem Header `Server-Timing` zeigt Cache-Treffer | `GET /api/auswertungen/standorte`, `GET /api/auswertungen/fahrzeuge` | A7 |
 
-«Gleichzeitig buchen» (Prüfanleitung Schritt 15): Beide Anfragen sehen das Fahrzeug als frei, der Exclusion-Constraint
+«Gleichzeitig buchen» ([Prüfanleitung](docs/pruefanleitung.md) Schritt 15): Beide Anfragen sehen das Fahrzeug als frei, der Exclusion-Constraint
 lässt nur eine zu.
 
 ![Zwei gleichzeitige Reservationen: eine 201, die andere 409](docs/gleichzeitig-buchen.png)
@@ -221,9 +221,9 @@ ihre Daten selbst an.
 | A1, A2 | `FahrzeugApiTest` (12), `KundeApiTest` (10) | 22 |
 | A3, A4, A5 | `ReservationApiTest` (11), `ReservationNebenlaeufigkeitTest` (2), `KundenReservationApiTest` (9), `ReservationslisteAbfragenTest` (2), `FahrtAbschlussTest` (8) | 32 |
 | A6 | `VerfuegbarkeitApiTest` (9) | 9 |
-| A7 und Cache | `NutzungRepositoryTest` (4), `NutzungApiTest` (4), `NutzungCacheTest` (5) | 13 |
+| A7 und Cache | `NutzungRepositoryTest` (5), `NutzungApiTest` (4), `NutzungCacheTest` (6) | 15 |
 | Index und Swagger UI | `KundenIndexTest` (1), `SwaggerTest` (2) | 3 |
-| **Total** | 18 Klassen | **93** |
+| **Total** | 18 Klassen | **95** |
 
 Die Zuordnung zu den Prüffällen steht unter [Prüffälle und Tests](#prüffälle-und-tests).
 
@@ -310,13 +310,13 @@ Weitere Fälle (400, 404, Filter, Grenzen) stehen in denselben Testklassen unter
 | T3 | Spring Boot, JPA, getrennte DTOs, Daten verwalten | Entities mit `@ManyToOne(fetch = LAZY)` und `@OneToOne`; Records als Request/Response; Controller → Service → Repository; erfassen, lesen, ändern, deaktivieren (ausser Betrieb, sperren, stornieren) | `EntityMappingTest`, `FahrzeugApiTest`, `KundeApiTest`, `http/requests.http` |
 | T4 | Atomare Operation, Rollback nach Schreibzugriff | A5 in einer Transaktion: bedingtes UPDATE der Reservation → INSERT Fahrt (CHECK in der DB) → UPDATE km-Stand mit `version` | `FahrtAbschlussTest`: Erfolg, Rollback nach Schritt 1, Versionskonflikt in Schritt 3 |
 | T5 | Konkurrierende Zugriffe | Exclusion-Constraint gegen Doppelbuchungen; Zeilensperren zwischen A1 und A3; `@Version` gegen Lost Updates | `ReservationNebenlaeufigkeitTest` (zwei Transaktionen, die zweite wartet nachweislich), `FahrzeugApiTest.veralteteVersionGibt409`, `FahrtAbschlussTest.gleichzeitigeFahrzeugAenderungRolltAllesZurueck` |
-| T6 | JPQL-/DTO-Projektion, JDBC mit JOIN und Aggregation, View | A6: `select new VerfuegbaresFahrzeug(…)` mit `not exists`; A7: `NamedParameterJdbcTemplate`, `LEFT JOIN`, `GROUP BY`, ausschliesslich über die View `v_fahrt_nutzung` | `VerfuegbarkeitApiTest`, `NutzungRepositoryTest`, `FahrtNutzungViewTest` |
+| T6 | JPQL-/DTO-Projektion, JDBC mit JOIN und Aggregation, View | A6: `select new VerfuegbaresFahrzeug(…)` mit `not exists`; A7: `NamedParameterJdbcTemplate`, `LEFT JOIN`, `GROUP BY`; Fahrten ausschliesslich über die View `v_fahrt_nutzung`, Fahrzeugbestand je Standort vorab gezählt (`WITH`), damit nichts mehrfach zählt | `VerfuegbarkeitApiTest`, `NutzungRepositoryTest`, `FahrtNutzungViewTest` |
 | T7 | Filter, stabile Sortierung, Pagination in der DB | A4: Status-Filter, `order by beginn desc, id desc`, Seite (Standard 20, max. 100); A6: nach Kennzeichen, seitenweise | `KundenReservationApiTest`, `ReservationslisteAbfragenTest`, `VerfuegbarkeitApiTest.seitenweiseNachKennzeichenSortiert` |
 | T8 | Integrationstests gegen PostgreSQL | Testcontainers mit `postgres:16-alpine`, kleine Testdaten je Test | alle Tests unter `src/test/java` |
 | T9 | Mindestens 100'000 Datensätze, reproduzierbar | `scripts/testdaten.sql`: 121'880 Reservationen; Zufallswerte aus md5 fester Schlüssel statt `random()` | `docs/performance.md` |
 | T10 | EXPLAIN ANALYZE, Index, vorher/nachher | A4-Abfrage; V9 `ix_reservation_kunde_beginn`; 5 Läufe, Median | `scripts/messung-a4.sql`, `docs/performance.md`, `KundenIndexTest` |
 | T11 | ORM-Ladeverhalten, N+1 | A4 als Entity-Liste 12/30/60 Abfragen bei Seitengrösse 5/20/50, mit Fetch Join immer 2 | `ReservationslisteAbfragenTest.entityListeLaedtProZeileNachFetchJoinNicht` |
-| T12 | Cache und Aktualität | Standortauswertung (A7), Schlüssel `(von, bis)` als Zeitpunkte; geleert nach dem COMMIT jedes Fahrtabschlusses; Header `Server-Timing` zeigt Treffer in der Oberfläche | `NutzungCacheTest`: erster Zugriff, Treffer ohne SQL, nach Änderung, Rollback, Abfrage vor dem COMMIT |
+| T12 | Cache und Aktualität | Standortauswertung (A7), Schlüssel `(von, bis)` als Zeitpunkte; geleert nach dem COMMIT jedes Fahrtabschlusses und jeder Änderung des Fahrzeugbestands; Header `Server-Timing` zeigt Treffer in der Oberfläche | `NutzungCacheTest`: erster Zugriff, Treffer ohne SQL, nach Fahrtabschluss, nach neuem Fahrzeug, Rollback, Abfrage vor dem COMMIT |
 
 ## Datenmodell
 
@@ -346,7 +346,8 @@ Weitere Fälle (400, 404, Filter, Grenzen) stehen in denselben Testklassen unter
 | Zugriff je nach Datenbedarf: A4 Entities mit Fetch Join, A6 DTO-Projektion, A7 JDBC | A4 braucht Reservation, Fahrzeug und Standort zusammen; A6 nur sechs Spalten; A7 ist eine Aggregation über die View. | `ReservationslisteAbfragenTest`, `VerfuegbarkeitApiTest`, `NutzungRepositoryTest` |
 | A6 in JPQL statt nativem SQL mit `&&` | Nativ mit `tstzrange(…) && tstzrange(…)` wären es 2.6 statt 16 ms, weil der GiST-Index auch den Zeitraum prüft. JPQL kennt `&&` nicht; 16 ms reichen für eine Suche. | `docs/performance.md` |
 | Zusätzlicher Index nur für A4 | A6 nutzt bereits den GiST-Index des Exclusion-Constraints. A4 las ohne Index die ganze Tabelle. | `docs/performance.md`, `KundenIndexTest` |
-| Cache nur für die Standortauswertung, geleert nach dem COMMIT von A5 | Sie hängt nur von abgeschlossenen Fahrten und Abholstandorten ab, Standorte sind fix. Bei der Fahrzeugauswertung würde schon ein neues Fahrzeug das Ergebnis ändern. Vor dem COMMIT geleert, könnte eine gleichzeitige Abfrage den alten Stand wieder in den Cache legen. | `NutzungCacheTest` |
+| Standort-Auslastung mit dem heutigen Fahrzeugbestand | Nenner = Fahrzeuge in Betrieb am Standort × Stunden des Zeitraums. Eine Bestandshistorie gibt es im Modell nicht; Standortwechsel sind nur ohne offene Reservationen erlaubt. Der Bestand wird vorab gezählt, sonst würde der JOIN jede Fahrt pro Fahrzeug wiederholen. | `NutzungRepositoryTest.jeStandortMitFahrzeugbestandUndAuslastung` |
+| Cache nur für die Standortauswertung, geleert nach dem COMMIT von A5 und von Änderungen am Fahrzeugbestand | Sie hängt nur von abgeschlossenen Fahrten mit Abholstandort und vom Bestand je Standort ab; beides ändert sich selten, gelesen wird oft. Standorte sind fix. Die Fahrzeugauswertung ändert sich schon mit jeder Änderung an einem Fahrzeug und wird nicht gecacht. Vor dem COMMIT geleert, könnte eine gleichzeitige Abfrage den alten Stand wieder in den Cache legen. | `NutzungCacheTest` |
 | Constraint-Verletzungen werden zu verständlichen Antworten | Die Regel steht einmal in der Datenbank; `ApiExceptionHandler` erkennt den Constraint am Namen und antwortet mit 400 oder 409. | `FahrzeugApiTest.doppeltesKennzeichenGibt409` |
 
 ## Performance
