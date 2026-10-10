@@ -50,5 +50,5 @@ export function kundenwahl({ beschriftung = 'Kunde', vorauswahl = null, gewaehlt
 
   if (vorauswahl) waehlen(vorauswahl);
 
-  return { element: wurzel, kunde: () => aktuell };
+  return { element: wurzel, kunde: () => aktuell, waehlen };
 }

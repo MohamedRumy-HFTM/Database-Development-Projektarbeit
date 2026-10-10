@@ -90,12 +90,14 @@ export function seitenwahl(daten, wechseln) {
 export function knopfMitBestaetigung(text, bestaetigung, ausfuehren) {
   let scharf = false;
   let zeitgeber;
-  const knopf = h('button', { class: 'knopf knopf-warn knopf-klein', type: 'button' }, text);
+  const ruhig = 'knopf knopf-leise knopf-klein';
+  const knopf = h('button', { class: ruhig, type: 'button' }, text);
   knopf.addEventListener('click', async () => {
     if (!scharf) {
       scharf = true;
       knopf.textContent = bestaetigung;
-      zeitgeber = setTimeout(() => { scharf = false; knopf.textContent = text; }, 4000);
+      knopf.className = 'knopf knopf-warn knopf-klein';
+      zeitgeber = setTimeout(() => { scharf = false; knopf.textContent = text; knopf.className = ruhig; }, 4000);
       return;
     }
     clearTimeout(zeitgeber);
