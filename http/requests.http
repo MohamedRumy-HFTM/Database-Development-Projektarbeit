@@ -195,6 +195,16 @@ Content-Type: application/json
   "rueckgabeAm": "{{$isoTimestamp}}"
 }
 
+### A7 – Nutzung je Standort im September 2026 (nach Abholstandort, meiste Fahrten zuerst)
+# Mit den Testdaten (Stichtag 1.10.2026). Der zweite Aufruf kommt aus dem Cache, bis eine Fahrt abgeschlossen wird.
+GET http://localhost:8080/api/auswertungen/standorte?von=2026-08-31T22:00:00Z&bis=2026-09-30T22:00:00Z
+
+### A7 – Nutzung je Fahrzeug mit Auslastung, nur Fahrzeuge in Biel Bahnhof
+GET http://localhost:8080/api/auswertungen/fahrzeuge?von=2026-08-31T22:00:00Z&bis=2026-09-30T22:00:00Z&standortId=1
+
+### A7 – bis vor von → 400
+GET http://localhost:8080/api/auswertungen/standorte?von=2026-09-30T22:00:00Z&bis=2026-08-31T22:00:00Z
+
 ### A2 – Kunde sperren
 POST http://localhost:8080/api/kunden/{{kundeId}}/sperren
 
