@@ -31,6 +31,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /**
  * A3 Reservieren und stornieren: die Prüffälle aus dem Projektsteckbrief.
+ * Gleichzeitige Anfragen prüft {@link ReservationNebenlaeufigkeitTest}.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
