@@ -45,7 +45,9 @@ export async function anzeigen(ziel) {
 
   function zeichnen(daten) {
     if (daten.inhalt.length === 0) {
-      liste.replaceChildren(h('p', { class: 'leer' }, 'Kein Kunde gefunden. Prüfe die Schreibweise oder erfasse einen neuen Kunden.'));
+      liste.replaceChildren(h('p', { class: 'leer' }, suche.value.trim()
+        ? 'Kein Kunde gefunden. Prüfe die Schreibweise oder erfasse einen neuen Kunden.'
+        : 'Noch kein Kunde erfasst. Lege den ersten mit «Kunde erfassen» an.'));
       return;
     }
     liste.replaceChildren(

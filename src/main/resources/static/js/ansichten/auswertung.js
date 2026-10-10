@@ -55,6 +55,10 @@ export async function anzeigen(ziel) {
   async function ladenFahrzeuge() {
     try {
       const daten = await lesen('/api/auswertungen/fahrzeuge', { ...zeitraum(), standortId: fahrzeugFilter.value });
+      if (daten.length === 0) {
+        fahrzeugListe.replaceChildren(h('p', { class: 'leer' }, 'Keine Fahrzeuge erfasst.'));
+        return;
+      }
       const sichtbar = alleZeigen ? daten : daten.slice(0, ANZAHL_KURZ);
       fahrzeugListe.replaceChildren(
         h('table', {},

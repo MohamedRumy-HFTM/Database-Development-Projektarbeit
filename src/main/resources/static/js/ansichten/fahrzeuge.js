@@ -59,7 +59,9 @@ export async function anzeigen(ziel) {
 
   function zeichnen(daten) {
     if (daten.inhalt.length === 0) {
-      liste.replaceChildren(h('p', { class: 'leer' }, 'An diesem Standort ist kein Fahrzeug erfasst.'));
+      liste.replaceChildren(h('p', { class: 'leer' }, filter.value
+        ? 'An diesem Standort ist kein Fahrzeug erfasst.'
+        : 'Noch kein Fahrzeug erfasst. Lege das erste mit «Fahrzeug erfassen» an.'));
       return;
     }
     liste.replaceChildren(
